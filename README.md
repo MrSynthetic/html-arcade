@@ -1,6 +1,6 @@
 # HTML Arcade
 
-Ten games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
+Thirteen games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
 
 | Game | What it is |
 |---|---|
@@ -14,5 +14,8 @@ Ten games. Each one is a single, self-contained HTML file: no installs, no inter
 | `sonar-sweep.html` | Mine-finding logic puzzle with best-time tables |
 | `prism-stack.html` | Falling-block puzzler: Marathon, Sprint and Ultra with high scores |
 | `neon-puck.html` | Air hockey vs computer or 2 players on one screen, with a scoreboard |
+| `brick-bloom.html` | Brick breaker with power-ups and endless levels |
+| `solitaire.html` | Classic patience card game with stats and top scores |
+| `boom-ridge.html` | Turn-based tank artillery, vs computer or 2 players |
 
 **Play:** download `html-arcade.zip` from the [Releases](../../releases/latest) page, unzip it, and open `index.html` (or any game file) in a browser. Works offline from a USB stick.

@@ -29,6 +29,9 @@
   .c8{background:linear-gradient(160deg,#0b3a52,#03121c)}.c8:hover{box-shadow:0 0 60px #2ad4ff66}
   .c9{background:linear-gradient(160deg,#1c1440,#07060f);box-shadow:0 0 40px #b84dff22}.c9:hover{box-shadow:0 0 60px #4dc3ff66}
   .c10{background:linear-gradient(160deg,#2a0718,#071c2c)}.c10:hover{box-shadow:0 0 60px #ff3d8166}
+  .c11{background:linear-gradient(160deg,#5a2a7a,#1a0b2a)}.c11:hover{box-shadow:0 0 60px #ff7ab666}
+  .c12{background:linear-gradient(160deg,#0f6b3f,#05301c)}.c12:hover{box-shadow:0 0 60px #ffd84a55}
+  .c13{background:linear-gradient(160deg,#a8452a,#2a1020)}.c13:hover{box-shadow:0 0 60px #ffb34766}
   .best{font-size:12px;color:#ffe066;margin-top:10px;font-weight:700}
 </style>
 </head>
@@ -36,7 +39,7 @@
 <canvas id="bg"></canvas>
 <main>
   <h1>ARCADE</h1>
-  <p class="sub">Ten games · each one a single self-contained HTML file · no installs, no internet needed</p>
+  <p class="sub">Thirteen games · each one a single self-contained HTML file · no installs, no internet needed</p>
   <div class="grid">
     <a class="card c5" href="lumen-rush.html"><div class="ic">🌀</div><h2>Lumen Rush <span style="font-size:12px;vertical-align:middle;background:#fff;color:#000;padding:2px 8px;border-radius:10px">3D</span></h2><p>Thread a ship through an endless neon tunnel at 1000 km/h. Every pixel is raymarched live on your GPU from a single shader. Phase-boost, close calls, slow-mo, six zones.</p><div class="best" id="b5"></div><div class="tags"><span>3D</span><span>WEBGL2</span><span>REFLEX</span></div></a>
     <a class="card c1" href="neon-swarm.html"><div class="ic">🛸</div><h2>Neon Swarm</h2><p>Twin-stick arena shooter. Survive endless waves, pick roguelite augments, and topple the Overmind every fifth wave.</p><div class="best" id="b1"></div><div class="tags"><span>SHOOTER</span><span>ROGUELITE</span><span>BOSSES</span></div></a>
@@ -48,10 +51,16 @@
     <a class="card c8" href="sonar-sweep.html"><div class="ic">📡</div><h2>Sonar Sweep</h2><p>Ping the sea floor and flag every mine. Safe first click, chording, long-press flags on mobile, custom fields and best-time tables.</p><div class="best" id="b8"></div><div class="tags"><span>LOGIC</span><span>TIMED</span><span>BEST TIMES</span></div></a>
     <a class="card c9" href="prism-stack.html"><div class="ic">🧊</div><h2>Prism Stack</h2><p>Falling-block puzzler with hold, 5-piece preview, ghost piece, wall kicks, spin bonuses and combos. Marathon, Sprint and Ultra modes with high-score tables.</p><div class="best" id="b9"></div><div class="tags"><span>PUZZLE</span><span>3 MODES</span><span>HIGH SCORES</span></div></a>
     <a class="card c10" href="neon-puck.html"><div class="ic">🏒</div><h2>Neon Puck</h2><p>Glowing air hockey. Play the computer, or lay a phone or tablet flat and battle a friend with both hands on the glass. First to 7 wins.</p><div class="best" id="b10"></div><div class="tags"><span>ARCADE</span><span>2 PLAYER</span><span>SCOREBOARD</span></div></a>
+    <a class="card c11" href="brick-bloom.html"><div class="ic">🧱</div><h2>Brick Bloom</h2><p>Bounce, smash and power up. Multi-ball, lasers, fireballs, explosive bricks and endless levels with a high-score table.</p><div class="best" id="b11"></div><div class="tags"><span>ARCADE</span><span>POWER-UPS</span><span>HIGH SCORES</span></div></a>
+    <a class="card c12" href="solitaire.html"><div class="ic">🃏</div><h2>Solitaire</h2><p>Classic patience with drag or tap-to-move, draw 1 or 3, unlimited undo, hints, auto-finish and the bouncing-cards victory.</p><div class="best" id="b12"></div><div class="tags"><span>CARDS</span><span>RELAXING</span><span>STATS</span></div></a>
+    <a class="card c13" href="boom-ridge.html"><div class="ic">💣</div><h2>Boom Ridge</h2><p>Turn-based tank artillery on blow-apart hills. Wind, seven weapons, a sharp-shooting computer or a friend on the same screen.</p><div class="best" id="b13"></div><div class="tags"><span>STRATEGY</span><span>2 PLAYER</span><span>SCOREBOARD</span></div></a>
   </div>
 </main>
 <script>
 const L=localStorage;
+try{const c=JSON.parse(L.getItem('brickbloom_scores'));if(c&&c.length)b11.textContent=`🏆 Best ${c[0].s.toLocaleString()}`;}catch(e){}
+try{const c=JSON.parse(L.getItem('sol_stats'));if(c&&c.won)b12.textContent=`🏆 ${c.won} wins · best ${c.best.toLocaleString()}`;}catch(e){}
+try{const c=JSON.parse(L.getItem('boomridge_scores'));if(c&&Object.keys(c).length)b13.textContent=`🏆 ${Object.keys(c).length} commanders on the board`;}catch(e){}
 try{const c=JSON.parse(L.getItem('prismstack_scores'));if(c&&c.marathon.length)b9.textContent=`🏆 Marathon best ${c.marathon[0].v.toLocaleString()}`;}catch(e){}
 try{const c=JSON.parse(L.getItem('neonpuck_scores'));if(c&&c.games.length)b10.textContent=`🏆 ${c.games.length} matches played`;}catch(e){}
 try{const c=JSON.parse(L.getItem('chess_scores'));if(c&&c.games.length)b6.textContent=`🏆 ${c.games.length} games on the scoreboard`;}catch(e){}
