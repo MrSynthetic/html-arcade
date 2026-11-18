@@ -222,7 +222,7 @@ function frame(now){
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const x=PAD+c*S+S/2,y=top+r*S+S/2;cx.strokeStyle='#ffffff22';cx.lineWidth=2;cx.beginPath();cx.arc(x,y,S*.42,Math.PI*1.1,Math.PI*1.9);cx.stroke();cx.strokeStyle='#0003';cx.beginPath();cx.arc(x,y,S*.42,Math.PI*.1,Math.PI*.9);cx.stroke();}
   // column highlight & hint
   if(!over&&hover>=0&&hover<COLS&&!isCpu(turn)){cx.fillStyle='#ffffff10';cx.fillRect(PAD+hover*S,top-6,S,ROWS*S+12);}
-  if(hint>=0){cx.strokeStyle='#fff';cx.setLineDash([6,6]);cx.lineWidth=3;cx.strokeRect(PAD+hint*S+3,top-3,S-6,ROWS*S+6);cx.setLineDash([]);cx.fillStyle='#fff';cx.font=`bold ${S*.35}px Segoe UI`;cx.textAlign='center';cx.fillText('▼',PAD+hint*S+S/2,PAD+S*.6);}
+  if(hint>=0){cx.strokeStyle='#fff';cx.setLineDash([6,6]);cx.lineWidth=3;cx.strokeRect(PAD+hint*S+3,top-3,S-6,ROWS*S+6);cx.setLineDash([]);cx.fillStyle='#fff';cx.font=`bold ${S*.35}px "Segoe UI",system-ui,sans-serif`;cx.textAlign='center';cx.fillText('▼',PAD+hint*S+S/2,PAD+S*.6);}
   // win line
   if(winLine){const p=winLine.map(([c,r])=>[PAD+c*S+S/2,top+(ROWS-1-r)*S+S/2]);
     p.forEach(([x,y])=>{cx.strokeStyle='#fff';cx.lineWidth=4;cx.shadowColor='#fff';cx.shadowBlur=18;cx.beginPath();cx.arc(x,y,S*.4+Math.sin(T*8)*3,0,Math.PI*2);cx.stroke();});

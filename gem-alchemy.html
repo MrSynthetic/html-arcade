@@ -497,7 +497,7 @@ function frame(now){
     else{cx.beginPath();cx.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);cx.fill();}}
   cx.globalCompositeOperation='source-over';cx.globalAlpha=1;
   for(let i=floats.length-1;i>=0;i--){const f=floats[i];f.life-=dt*.9;f.y-=dt*40;if(f.life<=0){floats.splice(i,1);continue;}
-    cx.globalAlpha=Math.min(1,f.life*2);cx.font=`900 ${f.sz}px Trebuchet MS,sans-serif`;cx.textAlign='center';cx.lineWidth=4;cx.strokeStyle='#4a0f4a';cx.strokeText(f.t,f.x,f.y);cx.fillStyle=f.col;cx.fillText(f.t,f.x,f.y);}
+    cx.globalAlpha=Math.min(1,f.life*2);cx.font=`900 ${f.sz}px "Trebuchet MS",system-ui,sans-serif`;cx.textAlign='center';cx.lineWidth=4;cx.strokeStyle='#4a0f4a';cx.strokeText(f.t,f.x,f.y);cx.fillStyle=f.col;cx.fillText(f.t,f.x,f.y);}
   cx.globalAlpha=1;cx.restore();
   drawBg(t);
   requestAnimationFrame(frame);

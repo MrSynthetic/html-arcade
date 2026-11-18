@@ -1,6 +1,6 @@
 # HTML Arcade
 
-Eight games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
+Ten games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
 
 | Game | What it is |
 |---|---|
@@ -12,5 +12,7 @@ Eight games. Each one is a single, self-contained HTML file: no installs, no int
 | `chess.html` | Full-rules chess vs computer or 2 players, with clocks and a scoreboard |
 | `drop-four.html` | Four-in-a-row vs computer or 2 players, with a scoreboard |
 | `sonar-sweep.html` | Mine-finding logic puzzle with best-time tables |
+| `prism-stack.html` | Falling-block puzzler: Marathon, Sprint and Ultra with high scores |
+| `neon-puck.html` | Air hockey vs computer or 2 players on one screen, with a scoreboard |
 
 **Play:** download `html-arcade.zip` from the [Releases](../../releases/latest) page, unzip it, and open `index.html` (or any game file) in a browser. Works offline from a USB stick.

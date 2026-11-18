@@ -493,7 +493,7 @@ function draw(){
     if(p.ring){cx.strokeStyle=p.col;cx.lineWidth=3*a;cx.beginPath();cx.arc(p.x,p.y,p.r,0,TAU);cx.stroke();}
     else{cx.fillStyle=p.col;cx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);}}
   cx.globalAlpha=1;cx.globalCompositeOperation='source-over';
-  for(const t of texts){cx.globalAlpha=Math.min(1,t.life*2);cx.fillStyle=t.col;cx.font=`900 ${t.size}px Segoe UI,sans-serif`;cx.textAlign='center';cx.fillText(t.t,t.x,t.y);}
+  for(const t of texts){cx.globalAlpha=Math.min(1,t.life*2);cx.fillStyle=t.col;cx.font=`900 ${t.size}px "Segoe UI",system-ui,sans-serif`;cx.textAlign='center';cx.fillText(t.t,t.x,t.y);}
   cx.globalAlpha=1;
   // touch stick
   if(touch.active){cx.strokeStyle='#ffffff33';cx.lineWidth=2;cx.beginPath();cx.arc(touch.sx,touch.sy,50,0,TAU);cx.stroke();

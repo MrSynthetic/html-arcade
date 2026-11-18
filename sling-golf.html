@@ -299,7 +299,7 @@ function render(){
     cx.globalAlpha=1;
     cx.strokeStyle='#ffffff66';cx.lineWidth=2;cx.setLineDash([6,6]);cx.beginPath();cx.moveTo(ball.x,ball.y);cx.lineTo(ball.x-Math.cos(a)*l,ball.y-Math.sin(a)*l);cx.stroke();cx.setLineDash([]);
     cx.strokeStyle=col;cx.lineWidth=5;cx.beginPath();cx.arc(ball.x,ball.y,R+8,-Math.PI/2,-Math.PI/2+pw*Math.PI*2);cx.stroke();
-    cx.fillStyle='#fff';cx.font='bold 16px Segoe UI';cx.textAlign='center';cx.fillText(Math.round(pw*100)+'%',ball.x,ball.y-R-18);
+    cx.fillStyle='#fff';cx.font='bold 16px "Segoe UI",system-ui,sans-serif';cx.textAlign='center';cx.fillText(Math.round(pw*100)+'%',ball.x,ball.y-R-18);
   }
   // trail
   cx.lineCap='round';for(let i=1;i<trail.length;i++){cx.strokeStyle=`rgba(255,255,255,${i/trail.length*.35})`;cx.lineWidth=R*1.4*i/trail.length;cx.beginPath();cx.moveTo(trail[i-1].x,trail[i-1].y);cx.lineTo(trail[i].x,trail[i].y);cx.stroke();}
@@ -314,7 +314,7 @@ function render(){
   // flag (drawn after ball so ball sinks below)
   const wave=Math.sin(t*3)*4;cx.strokeStyle='#e5e7eb';cx.lineWidth=3;cx.beginPath();cx.moveTo(cxp,cyp);cx.lineTo(cxp,cyp-70);cx.stroke();
   cx.fillStyle='#ef4444';cx.beginPath();cx.moveTo(cxp,cyp-70);cx.quadraticCurveTo(cxp+20,cyp-66+wave,cxp+38,cyp-58+wave);cx.quadraticCurveTo(cxp+20,cyp-52+wave,cxp,cyp-46);cx.fill();
-  cx.fillStyle='#fff';cx.font='bold 13px Segoe UI';cx.fillText(hole+1,cxp+16,cyp-54+wave/2);
+  cx.fillStyle='#fff';cx.font='bold 13px "Segoe UI",system-ui,sans-serif';cx.fillText(hole+1,cxp+16,cyp-54+wave/2);
   // particles
   for(const p of parts){cx.globalAlpha=Math.min(1,p.life*2);cx.fillStyle=p.col;if(p.conf){cx.save();cx.translate(p.x,p.y);cx.rotate(p.rot);cx.fillRect(-p.sz/2,-p.sz/4,p.sz,p.sz/2);cx.restore();}else{cx.beginPath();cx.arc(p.x,p.y,p.sz,0,Math.PI*2);cx.fill();}}
   cx.globalAlpha=1;
