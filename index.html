@@ -33,6 +33,10 @@
   .c12{background:linear-gradient(160deg,#0f6b3f,#05301c)}.c12:hover{box-shadow:0 0 60px #ffd84a55}
   .c13{background:linear-gradient(160deg,#a8452a,#2a1020)}.c13:hover{box-shadow:0 0 60px #ffb34766}
   .c14{background:linear-gradient(160deg,#3a4049,#0b0f14)}.c14:hover{box-shadow:0 0 60px #ffb34766}
+  .c15{background:linear-gradient(160deg,#d84a3a,#5a1e12)}.c15:hover{box-shadow:0 0 60px #ffd77a66}
+  .c16{background:linear-gradient(160deg,#5fb8e8,#1d3557)}.c16:hover{box-shadow:0 0 60px #ffd16666}
+  .c17{background:linear-gradient(160deg,#2563eb,#172554)}.c17:hover{box-shadow:0 0 60px #93c5fd88}
+  .c18{background:linear-gradient(160deg,#5aa02c,#1f3d10)}.c18:hover{box-shadow:0 0 60px #ffd23f66}
   .best{font-size:12px;color:#ffe066;margin-top:10px;font-weight:700}
 </style>
 </head>
@@ -40,7 +44,7 @@
 <canvas id="bg"></canvas>
 <main>
   <h1>ARCADE</h1>
-  <p class="sub">Fourteen games · each one a single self-contained HTML file · no installs, no internet needed</p>
+  <p class="sub">Eighteen games · each one a single self-contained HTML file · no installs, no internet needed</p>
   <div class="grid">
     <a class="card c5" href="lumen-rush.html"><div class="ic">🌀</div><h2>Lumen Rush <span style="font-size:12px;vertical-align:middle;background:#fff;color:#000;padding:2px 8px;border-radius:10px">3D</span></h2><p>Thread a ship through an endless neon tunnel at 1000 km/h. Every pixel is raymarched live on your GPU from a single shader. Phase-boost, close calls, slow-mo, six zones.</p><div class="best" id="b5"></div><div class="tags"><span>3D</span><span>WEBGL2</span><span>REFLEX</span></div></a>
     <a class="card c1" href="neon-swarm.html"><div class="ic">🛸</div><h2>Neon Swarm</h2><p>Twin-stick arena shooter. Survive endless waves, pick roguelite augments, and topple the Overmind every fifth wave.</p><div class="best" id="b1"></div><div class="tags"><span>SHOOTER</span><span>ROGUELITE</span><span>BOSSES</span></div></a>
@@ -49,6 +53,10 @@
     <a class="card c4" href="sky-dash.html"><div class="ic">🏃</div><h2>Sky Dash</h2><p>Synthwave rooftop runner. Double-jump, slide, ride rockets, complete missions and unlock skins in the garage.</p><div class="best" id="b4"></div><div class="tags"><span>RUNNER</span><span>MISSIONS</span><span>SKINS</span></div></a>
     <a class="card c6" href="chess.html"><div class="ic">♞</div><h2>Chess</h2><p>Full-rules chess against the computer (4 levels) or a friend. Clocks, hints, undo, move review, PGN export and a persistent scoreboard.</p><div class="best" id="b6"></div><div class="tags"><span>STRATEGY</span><span>2 PLAYER</span><span>SCOREBOARD</span></div></a>
     <a class="card c14" href="trash-panda.html"><div class="ic">🦝</div><h2>Trash Panda Panic</h2><p>You're a raccoon raiding the bins at 3am. Dodge four very tired janitors, munch every crumb, and eat a spicy taco to breathe fire and send them running to HR.</p><div class="best" id="b14"></div><div class="tags"><span>MAZE CHASE</span><span>FUNNY</span><span>HALL OF FAME</span></div></a>
+    <a class="card c15" href="noodle-slurp.html"><div class="ic">🍝</div><h2>Noodle Slurp</h2><p>You are one spaghetti noodle. Slurp meatballs, dodge Nonna's forks, grab garlic bread, and try not to eat yourself.</p><div class="best" id="b15"></div><div class="tags"><span>CLASSIC-ISH</span><span>FUNNY</span></div></a>
+    <a class="card c16" href="pigeon-panic.html"><div class="ic">🐦</div><h2>Pigeon Panic</h2><p>A pigeon has stolen an entire baguette and the whole city wants it back. Tap to flap through the gaps.</p><div class="best" id="b16"></div><div class="tags"><span>ONE TAP</span><span>FUNNY</span></div></a>
+    <a class="card c17" href="reply-all.html"><div class="ic">📧</div><h2>Reply All</h2><p>Waves of spam, chain letters and "per my last email" descend on your desk. Fire hot coffee. Survive the 9am Meeting.</p><div class="best" id="b17"></div><div class="tags"><span>SHOOTER</span><span>FUNNY</span></div></a>
+    <a class="card c18" href="why-chicken.html"><div class="ic">🐔</div><h2>Why Did The Chicken?</h2><p>Hop across endless roads, rivers and train tracks to finally learn why. Farmer Doug is right behind you.</p><div class="best" id="b18"></div><div class="tags"><span>ENDLESS</span><span>FUNNY</span></div></a>
     <a class="card c7" href="drop-four.html"><div class="ic">🔴</div><h2>Drop Four</h2><p>Line up four before your opponent does. Bouncy disc physics, a computer that goes up to Impossible, match scores and a leaderboard.</p><div class="best" id="b7"></div><div class="tags"><span>CLASSIC</span><span>2 PLAYER</span><span>SCOREBOARD</span></div></a>
     <a class="card c8" href="sonar-sweep.html"><div class="ic">📡</div><h2>Sonar Sweep</h2><p>Ping the sea floor and flag every mine. Safe first click, chording, long-press flags on mobile, custom fields and best-time tables.</p><div class="best" id="b8"></div><div class="tags"><span>LOGIC</span><span>TIMED</span><span>BEST TIMES</span></div></a>
     <a class="card c9" href="prism-stack.html"><div class="ic">🧊</div><h2>Prism Stack</h2><p>Falling-block puzzler with hold, 5-piece preview, ghost piece, wall kicks, spin bonuses and combos. Marathon, Sprint and Ultra modes with high-score tables.</p><div class="best" id="b9"></div><div class="tags"><span>PUZZLE</span><span>3 MODES</span><span>HIGH SCORES</span></div></a>
@@ -57,10 +65,18 @@
     <a class="card c12" href="solitaire.html"><div class="ic">🃏</div><h2>Solitaire</h2><p>Classic patience with drag or tap-to-move, draw 1 or 3, unlimited undo, hints, auto-finish and the bouncing-cards victory.</p><div class="best" id="b12"></div><div class="tags"><span>CARDS</span><span>RELAXING</span><span>STATS</span></div></a>
     <a class="card c13" href="boom-ridge.html"><div class="ic">💣</div><h2>Boom Ridge</h2><p>Turn-based tank artillery on blow-apart hills. Wind, seven weapons, a sharp-shooting computer or a friend on the same screen.</p><div class="best" id="b13"></div><div class="tags"><span>STRATEGY</span><span>2 PLAYER</span><span>SCOREBOARD</span></div></a>
     <a class="card c14" href="trash-panda.html"><div class="ic">🦝</div><h2>Trash Panda Panic</h2><p>You're a raccoon raiding the bins at 3am. Dodge four very tired janitors, munch every crumb, and eat a spicy taco to breathe fire and send them running to HR.</p><div class="best" id="b14"></div><div class="tags"><span>MAZE CHASE</span><span>FUNNY</span><span>HALL OF FAME</span></div></a>
+    <a class="card c15" href="noodle-slurp.html"><div class="ic">🍝</div><h2>Noodle Slurp</h2><p>You are one spaghetti noodle. Slurp meatballs, dodge Nonna's forks, grab garlic bread, and try not to eat yourself.</p><div class="best" id="b15"></div><div class="tags"><span>CLASSIC-ISH</span><span>FUNNY</span></div></a>
+    <a class="card c16" href="pigeon-panic.html"><div class="ic">🐦</div><h2>Pigeon Panic</h2><p>A pigeon has stolen an entire baguette and the whole city wants it back. Tap to flap through the gaps.</p><div class="best" id="b16"></div><div class="tags"><span>ONE TAP</span><span>FUNNY</span></div></a>
+    <a class="card c17" href="reply-all.html"><div class="ic">📧</div><h2>Reply All</h2><p>Waves of spam, chain letters and "per my last email" descend on your desk. Fire hot coffee. Survive the 9am Meeting.</p><div class="best" id="b17"></div><div class="tags"><span>SHOOTER</span><span>FUNNY</span></div></a>
+    <a class="card c18" href="why-chicken.html"><div class="ic">🐔</div><h2>Why Did The Chicken?</h2><p>Hop across endless roads, rivers and train tracks to finally learn why. Farmer Doug is right behind you.</p><div class="best" id="b18"></div><div class="tags"><span>ENDLESS</span><span>FUNNY</span></div></a>
   </div>
 </main>
 <script>
 const L=localStorage;
+try{const c=JSON.parse(L.getItem('noodle_scores'));if(c&&c.length)b15.textContent=`🏆 ${c[0].n} · ${c[0].s}`;}catch(e){}
+try{const c=JSON.parse(L.getItem('pigeon_scores'));if(c&&c.length)b16.textContent=`🏆 ${c[0].n} · ${c[0].s}`;}catch(e){}
+try{const c=JSON.parse(L.getItem('replyall_scores'));if(c&&c.length)b17.textContent=`🏆 ${c[0].n} · ${c[0].s}`;}catch(e){}
+try{const c=JSON.parse(L.getItem('chicken_scores'));if(c&&c.length)b18.textContent=`🏆 ${c[0].n} · ${c[0].s}`;}catch(e){}
 try{const c=JSON.parse(L.getItem('trashpanda_scores'));if(c&&c.length)b14.textContent=`🏆 ${c[0].n} · ${c[0].s.toLocaleString()}`;}catch(e){}
 try{const c=JSON.parse(L.getItem('brickbloom_scores'));if(c&&c.length)b11.textContent=`🏆 Best ${c[0].s.toLocaleString()}`;}catch(e){}
 try{const c=JSON.parse(L.getItem('sol_stats'));if(c&&c.won)b12.textContent=`🏆 ${c.won} wins · best ${c.best.toLocaleString()}`;}catch(e){}

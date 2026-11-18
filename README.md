@@ -1,6 +1,6 @@
 # HTML Arcade
 
-Fourteen games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
+Eighteen games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
 
 | Game | What it is |
 |---|---|
@@ -18,5 +18,9 @@ Fourteen games. Each one is a single, self-contained HTML file: no installs, no 
 | `solitaire.html` | Classic patience card game with stats and top scores |
 | `boom-ridge.html` | Turn-based tank artillery, vs computer or 2 players |
 | `trash-panda.html` | Silly maze-chase: a raccoon vs the night-shift janitors |
+| `noodle-slurp.html` | A spaghetti noodle slurping meatballs on Nonna's table |
+| `pigeon-panic.html` | One-tap flyer: a pigeon escaping with a stolen baguette |
+| `reply-all.html` | Shoot coffee at waves of spam emails and the 9am Meeting |
+| `why-chicken.html` | Endless road-crossing chicken with a new reason every 25 lanes |
 
 **Play:** download `html-arcade.zip` from the [Releases](../../releases/latest) page, unzip it, and open `index.html` (or any game file) in a browser. Works offline from a USB stick.
