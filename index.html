@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arcade — Four Single-File Games</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:#0a0614;color:#fff;font-family:"Segoe UI",system-ui,sans-serif;overflow-x:hidden}
+  canvas{position:fixed;inset:0;z-index:0}
+  main{position:relative;z-index:1;max-width:1100px;margin:auto;padding:60px 20px}
+  h1{text-align:center;font-size:clamp(44px,9vw,92px);font-weight:900;letter-spacing:-2px;background:linear-gradient(90deg,#3df5ff,#ff4fd8,#ffe066);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{text-align:center;opacity:.65;margin:8px 0 46px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
+  a.card{display:block;text-decoration:none;color:#fff;border-radius:22px;padding:28px 22px;min-height:260px;position:relative;overflow:hidden;border:1px solid #ffffff22;transition:transform .2s,box-shadow .2s}
+  a.card:hover{transform:translateY(-8px) rotate(-.6deg)}
+  .card .ic{font-size:56px}
+  .card h2{font-size:28px;margin:14px 0 6px;font-weight:900}
+  .card p{opacity:.85;font-size:14px;line-height:1.5}
+  .card .tags{margin-top:16px;display:flex;gap:6px;flex-wrap:wrap}
+  .card .tags span{font-size:11px;background:#0004;padding:3px 9px;border-radius:20px;letter-spacing:1px}
+  .c1{background:linear-gradient(160deg,#1b0b3a,#0a0420);box-shadow:0 0 40px #00f0ff22}.c1:hover{box-shadow:0 0 60px #00f0ff66}
+  .c2{background:linear-gradient(160deg,#7a2c9e,#3a0f5a)}.c2:hover{box-shadow:0 0 60px #ff7ad966}
+  .c3{background:linear-gradient(160deg,#2d7a3e,#123f1f)}.c3:hover{box-shadow:0 0 60px #4ade8066}
+  .c4{background:linear-gradient(160deg,#ff4fd8,#5b1fa8)}.c4:hover{box-shadow:0 0 60px #ff4fd866}
+  .c5{grid-column:1/-1;min-height:220px;background:radial-gradient(ellipse at 80% 50%,#7a3cff55,transparent 60%),linear-gradient(120deg,#05010f,#151a4a 60%,#3a1060);box-shadow:0 0 50px #7cf3}.c5:hover{box-shadow:0 0 80px #7cf8}
+  .c6{background:linear-gradient(160deg,#6b4a2b,#2a1c10)}.c6:hover{box-shadow:0 0 60px #e2b65b66}
+  .c7{background:linear-gradient(160deg,#4b6fd8,#2b1055)}.c7:hover{box-shadow:0 0 60px #ffd23f66}
+  .c8{background:linear-gradient(160deg,#0b3a52,#03121c)}.c8:hover{box-shadow:0 0 60px #2ad4ff66}
+  .best{font-size:12px;color:#ffe066;margin-top:10px;font-weight:700}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<main>
+  <h1>ARCADE</h1>
+  <p class="sub">Eight games · each one a single self-contained HTML file · no installs, no internet needed</p>
+  <div class="grid">
+    <a class="card c5" href="lumen-rush.html"><div class="ic">🌀</div><h2>Lumen Rush <span style="font-size:12px;vertical-align:middle;background:#fff;color:#000;padding:2px 8px;border-radius:10px">3D</span></h2><p>Thread a ship through an endless neon tunnel at 1000 km/h. Every pixel is raymarched live on your GPU from a single shader. Phase-boost, close calls, slow-mo, six zones.</p><div class="best" id="b5"></div><div class="tags"><span>3D</span><span>WEBGL2</span><span>REFLEX</span></div></a>
+    <a class="card c1" href="neon-swarm.html"><div class="ic">🛸</div><h2>Neon Swarm</h2><p>Twin-stick arena shooter. Survive endless waves, pick roguelite augments, and topple the Overmind every fifth wave.</p><div class="best" id="b1"></div><div class="tags"><span>SHOOTER</span><span>ROGUELITE</span><span>BOSSES</span></div></a>
+    <a class="card c2" href="gem-alchemy.html"><div class="ic">💎</div><h2>Gem Alchemy</h2><p>Match-3 with Line Blasters, Bombs and Prisms. 40 levels of score, collect and ice goals, plus a 90-second Blitz mode.</p><div class="best" id="b2"></div><div class="tags"><span>PUZZLE</span><span>40 LEVELS</span><span>COMBOS</span></div></a>
+    <a class="card c3" href="sling-golf.html"><div class="ic">⛳</div><h2>Sling Golf</h2><p>Nine-hole physics mini golf with windmills, portals, ice, sand, water, conveyors and bumpers. Full scorecard.</p><div class="best" id="b3"></div><div class="tags"><span>PHYSICS</span><span>9 HOLES</span><span>CASUAL</span></div></a>
+    <a class="card c4" href="sky-dash.html"><div class="ic">🏃</div><h2>Sky Dash</h2><p>Synthwave rooftop runner. Double-jump, slide, ride rockets, complete missions and unlock skins in the garage.</p><div class="best" id="b4"></div><div class="tags"><span>RUNNER</span><span>MISSIONS</span><span>SKINS</span></div></a>
+    <a class="card c6" href="chess.html"><div class="ic">♞</div><h2>Chess</h2><p>Full-rules chess against the computer (4 levels) or a friend. Clocks, hints, undo, move review, PGN export and a persistent scoreboard.</p><div class="best" id="b6"></div><div class="tags"><span>STRATEGY</span><span>2 PLAYER</span><span>SCOREBOARD</span></div></a>
+    <a class="card c7" href="drop-four.html"><div class="ic">🔴</div><h2>Drop Four</h2><p>Line up four before your opponent does. Bouncy disc physics, a computer that goes up to Impossible, match scores and a leaderboard.</p><div class="best" id="b7"></div><div class="tags"><span>CLASSIC</span><span>2 PLAYER</span><span>SCOREBOARD</span></div></a>
+    <a class="card c8" href="sonar-sweep.html"><div class="ic">📡</div><h2>Sonar Sweep</h2><p>Ping the sea floor and flag every mine. Safe first click, chording, long-press flags on mobile, custom fields and best-time tables.</p><div class="best" id="b8"></div><div class="tags"><span>LOGIC</span><span>TIMED</span><span>BEST TIMES</span></div></a>
+  </div>
+</main>
+<script>
+const L=localStorage;
+try{const c=JSON.parse(L.getItem('chess_scores'));if(c&&c.games.length)b6.textContent=`🏆 ${c.games.length} games on the scoreboard`;}catch(e){}
+try{const c=JSON.parse(L.getItem('dropfour_scores'));if(c&&c.games.length)b7.textContent=`🏆 ${c.games.length} games on the scoreboard`;}catch(e){}
+try{const c=JSON.parse(L.getItem('sonar_scores'));if(c&&c.best[0].length)b8.textContent=`🏆 Shallow best ${c.best[0][0].t.toFixed(1)}s`;}catch(e){}
+try{const r=JSON.parse(L.getItem('lumenrush_best'));if(r&&r.score)b5.textContent=`🏆 Best ${r.score.toLocaleString()} · ${r.dist.toLocaleString()} m`;}catch(e){}
+const ns=+L.getItem('neonswarm_hi');if(ns)b1.textContent=`🏆 Best ${ns.toLocaleString()} · wave ${L.getItem('neonswarm_hiw')}`;
+try{const g=JSON.parse(L.getItem('gemalc_prog'));const st=Object.values(g.stars).reduce((a,b)=>a+b,0);if(g.unlocked>1)b2.textContent=`🏆 Level ${g.unlocked} unlocked · ${st}⭐`;}catch(e){}
+const sg=L.getItem('slinggolf_best');if(sg!=null)b3.textContent=`🏆 Best round ${+sg===0?'E':sg>0?'+'+sg:sg}`;
+try{const s=JSON.parse(L.getItem('skydash_save'));if(s&&s.best)b4.textContent=`🏆 Best ${s.best.toLocaleString()} m · ${s.bank} ◉`;}catch(e){}
+const c=document.getElementById('bg'),x=c.getContext('2d');let P=[];
+function rs(){c.width=innerWidth;c.height=innerHeight;P=Array.from({length:80},()=>({x:Math.random()*c.width,y:Math.random()*c.height,v:Math.random()*.4+.1,r:Math.random()*2+.5,h:Math.random()*360}));}
+addEventListener('resize',rs);rs();
+(function f(t){x.fillStyle='#0a061422';x.fillRect(0,0,c.width,c.height);for(const p of P){p.y-=p.v;if(p.y<0)p.y=c.height;x.fillStyle=`hsla(${p.h+t/40},90%,65%,.7)`;x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill();}requestAnimationFrame(f);})(0);
+</script>
+</body>
+</html>
