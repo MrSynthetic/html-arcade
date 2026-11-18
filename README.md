@@ -1,6 +1,6 @@
 # HTML Arcade
 
-Thirteen games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
+Fourteen games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
 
 | Game | What it is |
 |---|---|
@@ -17,5 +17,6 @@ Thirteen games. Each one is a single, self-contained HTML file: no installs, no 
 | `brick-bloom.html` | Brick breaker with power-ups and endless levels |
 | `solitaire.html` | Classic patience card game with stats and top scores |
 | `boom-ridge.html` | Turn-based tank artillery, vs computer or 2 players |
+| `trash-panda.html` | Silly maze-chase: a raccoon vs the night-shift janitors |
 
 **Play:** download `html-arcade.zip` from the [Releases](../../releases/latest) page, unzip it, and open `index.html` (or any game file) in a browser. Works offline from a USB stick.
