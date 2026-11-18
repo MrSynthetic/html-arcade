@@ -42,6 +42,12 @@
   .pc.w{color:#fbf8f2;-webkit-text-stroke:calc(var(--bs)/400) #2a2017;text-shadow:0 2px 3px #0007}
   .pc.b{color:#211a14;-webkit-text-stroke:calc(var(--bs)/500) #000;text-shadow:0 2px 3px #0006,0 0 1px #fff3}
   .pc.ghost{opacity:.35}
+  body.f2f .pc.b,body.f2f #drag.b{rotate:180deg}
+  body.f2f #topBar{transform:rotate(180deg)}
+  body.f2f .coord{display:none}
+  #turnToast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);background:var(--accent);color:#111;font-weight:800;font-size:22px;padding:14px 26px;border-radius:14px;box-shadow:0 10px 40px #000a;pointer-events:none;opacity:0;transition:opacity .25s,transform .25s;z-index:40;white-space:nowrap}
+  #turnToast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #turnToast.rot{transform:translate(-50%,-50%) rotate(180deg) scale(1)}
   #drag{position:fixed;pointer-events:none;z-index:50;transform:translate(-50%,-55%) scale(1.12);display:none}
   #right{width:min(360px,94vw);display:flex;flex-direction:column;gap:12px}
   .card{background:var(--panel);border-radius:12px;padding:14px}
@@ -109,9 +115,10 @@
         <button id="resignBtn">⚑ Resign</button>
         <button id="pgnBtn">⧉ PGN</button>
       </div>
-      <div class="btns" style="margin-top:8px;grid-template-columns:1fr 1fr">
-        <button class="pri" id="newBtn">＋ New Game</button>
-        <button id="sbBtn">🏆 Scoreboard</button>
+      <div class="btns" style="margin-top:8px">
+        <button class="pri" id="newBtn">🖥 Computer</button>
+        <button class="pri" id="new2pBtn">👥 2 Players</button>
+        <button id="sbBtn">🏆 Scores</button>
       </div>
     </div>
     <div class="card">
@@ -123,6 +130,7 @@
   </div>
 </div>
 <div id="drag" class="pc"></div>
+<div id="turnToast"></div>
 
 <div id="newModal" class="modal hidden"><div class="card">
   <div class="big">New Game</div>
@@ -137,6 +145,9 @@
   </div>
   <div id="pvpOpts" class="hidden">
     <div class="row2"><div><label>WHITE</label><input id="nameW" maxlength="18" placeholder="Player 1"></div><div><label>BLACK</label><input id="nameB" maxlength="18" placeholder="Player 2"></div></div>
+    <label>BOARD VIEW</label>
+    <select id="view"><option value="fixed">Fixed: White at the bottom</option><option value="auto">Auto-flip: board turns to face whoever's move it is</option><option value="table">Face-to-face: phone/tablet flat between you</option></select>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;opacity:.85;margin-top:10px"><input type="checkbox" id="randCol" style="width:auto"> Pick colours at random</label>
   </div>
   <label>TIME CONTROL</label>
   <select id="tc"><option value="0">No clock</option><option value="180,2">3 + 2 Blitz</option><option value="300,0">5 min Blitz</option><option value="600,0">10 min Rapid</option><option value="900,10">15 + 10 Rapid</option><option value="1800,0">30 min Classical</option></select>
@@ -341,18 +352,25 @@ function record(name,res){const p=SB.players[name]||(SB.players[name]={w:0,d:0,l
 
 /* game state */
 let G,flipped=false,sel=-1,legalCache=[],hintMove=null,reviewIdx=null,clockTimer=null;
-let settings=JSON.parse(localStorage.getItem('chess_settings')||'{"mode":"cpu","you":"","side":"w","level":1,"nw":"","nb":"","tc":"0","theme":""}');
+let settings=JSON.parse(localStorage.getItem('chess_settings')||'{"mode":"cpu","you":"","side":"w","level":1,"nw":"","nb":"","tc":"0","theme":"","view":"auto","randCol":false}');
 function newGame(cfg){
   const side=cfg.side==='r'?(Math.random()<.5?'w':'b'):cfg.side;
   const you=(cfg.you||'Player').trim()||'Player';
-  const names=cfg.mode==='cpu'?(side==='w'?{w:you,b:'Computer · '+LEVELS[cfg.level].n}:{w:'Computer · '+LEVELS[cfg.level].n,b:you}):{w:(cfg.nw||'Player 1').trim()||'Player 1',b:(cfg.nb||'Player 2').trim()||'Player 2'};
+  let pw=cfg.nw,pb=cfg.nb;if(cfg.mode==='2p'&&cfg.randCol&&Math.random()<.5)[pw,pb]=[pb,pw];
+  const names=cfg.mode==='cpu'?(side==='w'?{w:you,b:'Computer · '+LEVELS[cfg.level].n}:{w:'Computer · '+LEVELS[cfg.level].n,b:you}):{w:(pw||'Player 1').trim()||'Player 1',b:(pb||'Player 2').trim()||'Player 2'};
   const tc=cfg.tc==='0'?null:cfg.tc.split(',').map(Number);
   G={s:C.initial(),hist:[],mode:cfg.mode,human:side,level:+cfg.level,names,over:false,result:null,reason:'',
      pos:{},clock:tc?{w:tc[0]*1000,b:tc[0]*1000,inc:tc[1]*1000,last:null}:null,cfg,thinking:false,evalScore:0};
   G.pos[C.key(G.s)]=1;
+  G.view=G.mode==='2p'?(cfg.view||'fixed'):'fixed';
+  document.body.classList.toggle('f2f',G.view==='table');
   flipped=G.mode==='cpu'&&side==='b';sel=-1;hintMove=null;reviewIdx=null;
   render();maybeCpu();
+  if(G.mode==='2p')toast(`${G.names.w} (White) starts`);
 }
+function syncView(){if(G.mode==='2p'&&G.view==='auto'){const want=G.s.turn==='b';if(flipped!==want){flipped=want;render();}}}
+let toastT=null;
+function toast(t){const e=$('turnToast');e.textContent=t;e.classList.add('show');e.classList.toggle('rot',G.view==='table'&&G.s.turn==='b');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show','rot'),1100);}
 function curState(){return reviewIdx==null?G.s:(reviewIdx===0?G.histStart||C.initial():G.hist[reviewIdx-1].after);}
 function lastMove(){if(reviewIdx!=null)return reviewIdx?G.hist[reviewIdx-1].m:null;return G.hist.length?G.hist[G.hist.length-1].m:null;}
 function humanTurn(){return !G.over&&reviewIdx==null&&!G.thinking&&(G.mode==='2p'||G.s.turn===G.human);}
@@ -436,6 +454,7 @@ function doMove(m){
   else if(C.insufficient(ns.b))finish('1/2-1/2','insufficient material');
   render();
   if(!G.over)maybeCpu();
+  if(!G.over&&G.mode==='2p'){setTimeout(syncView,450);if(G.view!=='fixed')toast(`${G.names[G.s.turn]}'s move`+(C.inCheck(G.s,G.s.turn)?' — check!':''));}
 }
 function maybeCpu(){
   if(G.over||G.mode!=='cpu'||G.s.turn===G.human)return;
@@ -477,6 +496,7 @@ function tryMove(from,to){
 function askPromo(ms){
   const P=$('promo');P.innerHTML='';const c=G.s.turn;
   ['Q','R','B','N'].forEach(t=>{const d=document.createElement('div');d.innerHTML=`<span class="pc ${c}">${glyph(t)}</span>`;d.onclick=()=>{$('promoModal').classList.add('hidden');doMove(ms.find(m=>m.promo.toUpperCase()===t));};P.appendChild(d);});
+  $('promoModal').querySelector('.card').style.transform=G.view==='table'&&c==='b'?'rotate(180deg)':'';
   $('promoModal').classList.remove('hidden');
 }
 boardEl.addEventListener('pointerdown',e=>{
@@ -504,14 +524,14 @@ $('undoBtn').onclick=()=>{if(G.thinking||!G.hist.length)return;
   n=Math.min(n,G.hist.length);
   for(let i=0;i<n;i++){const h=G.hist.pop();const k=C.key(G.s);G.pos[k]--;G.s=h.before;if(G.clock&&h.clock){/* keep clocks as they are */}}
   if(G.over){G.over=false;G.result=null;}
-  sel=-1;hintMove=null;reviewIdx=null;render();maybeCpu();};
+  sel=-1;hintMove=null;reviewIdx=null;render();syncView();maybeCpu();};
 $('flipBtn').onclick=()=>{flipped=!flipped;render();};
 $('hintBtn').onclick=()=>{if(!humanTurn())return;G.thinking=true;render();think(G.s,{depth:4,timeMs:1000},r=>{G.thinking=false;hintMove=r.move;render();});};
 $('resignBtn').onclick=()=>{if(G.over)return;const loser=G.mode==='cpu'?G.human:G.s.turn;
   if(!confirm(`${G.names[loser]}, resign this game?`))return;finish(loser==='w'?'0-1':'1-0','resignation');render();};
 $('drawBtn').onclick=()=>{if(G.over||G.mode==='cpu')return;const o=G.s.turn==='w'?'b':'w';if(confirm(`${G.names[G.s.turn]} offers a draw.\n${G.names[o]}, do you accept?`)){finish('1/2-1/2','agreement');render();}};
 $('pgnBtn').onclick=()=>{const t=pgn();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>alert('PGN copied to clipboard'),()=>prompt('Copy PGN:',t));};
-$('newBtn').onclick=openNew;
+$('newBtn').onclick=()=>openNew('cpu');$('new2pBtn').onclick=()=>openNew('2p');
 $('sbBtn').onclick=openSB;$('endSb').onclick=()=>{$('endModal').classList.add('hidden');openSB();};
 $('endReview').onclick=()=>$('endModal').classList.add('hidden');
 $('endRematch').onclick=()=>{$('endModal').classList.add('hidden');const c=Object.assign({},G.cfg);if(c.mode==='cpu')c.side=G.human==='w'?'b':'w';else{[c.nw,c.nb]=[c.nb,c.nw];}newGame(c);};
@@ -523,13 +543,13 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
   if(e.key==='ArrowRight'&&reviewIdx!=null){reviewIdx++;if(reviewIdx>=G.hist.length)reviewIdx=null;render();}
   if(e.key==='f')$('flipBtn').click();});
 
-function openNew(){
-  const m=settings.mode;setSeg(m);$('nameYou').value=settings.you;$('side').value=settings.side;$('level').value=settings.level;$('nameW').value=settings.nw;$('nameB').value=settings.nb;$('tc').value=settings.tc;
+function openNew(mode){
+  const m=mode||settings.mode;setSeg(m);$('view').value=settings.view||'auto';$('randCol').checked=!!settings.randCol;$('nameYou').value=settings.you;$('side').value=settings.side;$('level').value=settings.level;$('nameW').value=settings.nw;$('nameB').value=settings.nb;$('tc').value=settings.tc;
   $('newModal').classList.remove('hidden');}
 function setSeg(v){[...$('modeSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.v===v));$('cpuOpts').classList.toggle('hidden',v!=='cpu');$('pvpOpts').classList.toggle('hidden',v==='cpu');settings.mode=v;}
 $('modeSeg').onclick=e=>{if(e.target.dataset.v)setSeg(e.target.dataset.v);};
 $('cancelNew').onclick=()=>$('newModal').classList.add('hidden');
-$('startNew').onclick=()=>{Object.assign(settings,{you:$('nameYou').value,side:$('side').value,level:+$('level').value,nw:$('nameW').value,nb:$('nameB').value,tc:$('tc').value});
+$('startNew').onclick=()=>{Object.assign(settings,{you:$('nameYou').value,side:$('side').value,level:+$('level').value,nw:$('nameW').value,nb:$('nameB').value,tc:$('tc').value,view:$('view').value,randCol:$('randCol').checked});
   localStorage.setItem('chess_settings',JSON.stringify(settings));$('newModal').classList.add('hidden');newGame(settings);};
 function openSB(){
   const rows=Object.entries(SB.players).map(([n,r])=>({n,...r,pts:r.w+r.d/2,g:r.w+r.d+r.l})).sort((a,b)=>b.pts-a.pts||b.w-a.w||a.l-b.l);
