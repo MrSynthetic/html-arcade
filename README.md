@@ -1,6 +1,6 @@
 # HTML Arcade
 
-Twenty-eight games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
+Twenty-nine games. Each one is a single, self-contained HTML file: no installs, no internet, no dependencies.
 
 | Game | What it is |
 |---|---|
@@ -25,6 +25,7 @@ Twenty-eight games. Each one is a single, self-contained HTML file: no installs,
 | `angry-squaddy.html` | British Army horde survival with evolving weapons and 2-player co-op |
 | `breachline.html` | Tap to crack firewalls before the trace finds you, then upgrade your rig |
 | `syndicate.html` | 1v1 crime-empire bluffing duels across three territories |
+| `squaddy-headers.html` | Big-head 1v1 football on the parade square, vs the computer or 2 players |
 | `lost-on-the-plain.html` | Open-world roguelike: find each RV across an endless map, with village shops and perks |
 | `bleep-test.html` | Hold-to-sprint shuttle runs against the beep, with upgrades and a heckling PTI |
 | `the-tab.html` | Endless loaded march with jumps, water, a kit store and a day/night cycle |

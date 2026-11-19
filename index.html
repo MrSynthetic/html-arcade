@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>HTML Arcade · 28 Games, Zero Installs, Several Regrets</title>
+<title>HTML Arcade · 29 Games, Zero Installs, Several Regrets</title>
 <style>
 :root{--bg:#0a0614;--panel:#140c26;--line:#ffffff1c;--fg:#fff;--dim:#b9b1d6;--c1:#3df5ff;--c2:#ff4fd8;--c3:#ffe066;--ok:#4ade80}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -91,6 +91,7 @@ button.pill:hover{background:#ffffff1c}
 .t-pp{background:linear-gradient(160deg,#4aa3d8,#1e4f7a)}.t-pp:hover{box-shadow:0 0 60px #7ec8f066}
 .t-nd{background:linear-gradient(160deg,#b8452a,#3b1d12)}.t-nd:hover{box-shadow:0 0 60px #ffb38a66}
 .t-bl{background:radial-gradient(120% 80% at 50% 0%,#0c3a30,#05080a)}.t-bl:hover{box-shadow:0 0 60px #28f0a066}
+.t-sh{background:linear-gradient(160deg,#2f6a2a,#0f240c)}.t-sh:hover{box-shadow:0 0 60px #7fe07f66}
 .t-lp{background:linear-gradient(160deg,#3a5a2a,#141f0e)}.t-lp:hover{box-shadow:0 0 60px #9fd36b66}
 .t-bt{background:linear-gradient(160deg,#c8102e,#3a0610)}.t-bt:hover{box-shadow:0 0 60px #ff6b5a66}
 .t-tb{background:linear-gradient(160deg,#5a6a3a,#1c2410)}.t-tb:hover{box-shadow:0 0 60px #e9d28a66}
@@ -160,7 +161,7 @@ footer b{color:#ffffffaa}
 <main>
  <header>
   <div class="marquee"><h1>ARCADE</h1></div>
-  <p class="tag" id="tag">Twenty-eight games. Zero installs. Several regrets.</p>
+  <p class="tag" id="tag">Twenty-nine games. Zero installs. Several regrets.</p>
   <div class="coins">
    <span class="pill">🪙 CREDITS: <b>∞</b> (we don't check)</span>
    <span class="pill" id="statPlays">🕹️ <b>0</b> plays</span>
@@ -209,6 +210,10 @@ const GAMES=[
   desc:'British Army horde survival. Auto-firing SA80, orbiting scalding tea, 8 evolving weapons, Banter Blasts, Military Police, killer chefs, zombies and 2-player co-op.',
   quip:'Contains: bayonets, banter, and the RSM. Does not contain: a decent brew.',tags:['SURVIVOR','CO-OP','ZOMBIES'],
   best(){const s=LS.json('angrySquaddy_v2');if(s&&s.best)return`🏆 Best ${s.best.toLocaleString()} · survived ${Math.floor(s.bestTime/60)}m${String(s.bestTime%60).padStart(2,'0')}s`}},
+ {id:'squaddy-headers',file:'squaddy-headers.html',ic:'⚽',name:'Squaddy Headers',badge:'NEW',t:'t-sh',cats:['army','action','2p','silly'],
+  desc:'Parade square punt-up. Big heads, small legs: jump, kick and nut the ball into the net against the computer (Recruit, Regular or SAS) or a mate on the same screen.',
+  quip:'Earn quid, kit yourself out at the NAAFI and climb the ranks from Crow.',tags:['FOOTBALL','2 PLAYER','KIT & RANKS'],
+  best(){const c=LS.json('squaddyHeaders_v1');if(c&&(c.totalGoals||c.wins))return`🏆 ${c.totalGoals||0} goals · best run ${c.bestStreak||0}`}},
  {id:'lost-on-the-plain',file:'lost-on-the-plain.html',ic:'🧭',name:'Lost on the Plain',badge:'NEW',t:'t-lp',cats:['army','strategy','silly'],
   desc:'Open-world roguelike. ENDEX was called and everyone went home without you. Follow the compass to each RV across an endless map of villages, rivers and bogs.',
   quip:'Contains angry sheep, lost officers and one RSM. Permadeath. Obviously.',tags:['ROGUELIKE','OPEN WORLD','NAAFI SHOPS'],
@@ -320,7 +325,7 @@ const GAMES=[
 ];
 const CATS=[['all','All'],['army','🪖 Squaddie'],['silly','😂 Silly'],['action','Action'],['puzzle','Puzzle'],['strategy','Strategy'],['2p','2 Player'],['casual','Chill']];
 const TAGLINES=[
- 'Twenty-eight games. Zero installs. Several regrets.',
+ 'Twenty-nine games. Zero installs. Several regrets.',
  'Now with 100% more angry soldiers.',
  'Certified free of loot boxes. And of adult supervision.',
  'Your boss thinks this is a spreadsheet. Keep it that way.',
