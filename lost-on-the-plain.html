@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lost on the Plain</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0d08;color:#efe8d0;font-family:"Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+#log{position:fixed;left:12px;bottom:12px;max-width:min(560px,70vw);font-size:13px;line-height:1.45;text-shadow:0 1px 3px #000,0 0 6px #000;pointer-events:none;z-index:2}
+#log div{opacity:.95}#log div:nth-child(1){opacity:.45}#log div:nth-child(2){opacity:.6}#log div:nth-child(3){opacity:.78}
+#pad{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));display:none;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:6px;z-index:2}
+#pad button{border-radius:14px;border:2px solid #ffffff30;background:#0008;color:#fff;font-size:22px}
+#pad button.e{visibility:hidden}
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#050704d0;z-index:5;padding:12px}
+.ov.hide{display:none}
+.card{background:linear-gradient(#2c3722,#141a0f);border:2px solid #5d6b3a;border-radius:18px;padding:20px;width:min(500px,95vw);max-height:94vh;overflow:auto;text-align:center;box-shadow:0 30px 80px #000}
+h1{font-family:Impact,"Arial Black",sans-serif;font-size:clamp(38px,10vw,62px);letter-spacing:2px;color:#e9d28a;text-shadow:0 4px 0 #4a3a10,0 10px 24px #000;line-height:.95}
+h2{font-family:Impact,"Arial Black",sans-serif;font-size:30px;color:#e9d28a;letter-spacing:1px}
+.sub{opacity:.85;font-size:14px;margin:10px 0 14px;line-height:1.5}
+.btn{font:800 16px "Segoe UI",system-ui,sans-serif;padding:11px 20px;border:none;border-radius:12px;cursor:pointer;background:linear-gradient(#f0d98a,#c2972e);color:#251c04;box-shadow:0 4px 0 #6a5414;margin:4px}
+.btn.alt{background:#ffffff16;color:#eee;box-shadow:none;border:1px solid #ffffff33}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;background:#ffffff0c;border:1px solid #ffffff1c;border-radius:12px;padding:11px;margin:8px 0;cursor:pointer}
+.opt:hover{background:#ffffff1a;border-color:#e9d28a}
+.opt.no{opacity:.45;cursor:default}
+.opt .i{font-size:30px;width:40px;text-align:center}
+.opt .d{flex:1;font-size:13px;opacity:.85}.opt .d b{display:block;font-size:15px;opacity:1}
+.opt .c{font-weight:800;color:#ffcf5a}
+table{width:100%;border-collapse:collapse;font-size:13px;text-align:left;margin-top:8px}
+td{padding:5px 4px;border-bottom:1px solid #ffffff14}td:first-child{opacity:.55;width:22px}
+.me{color:#ffcf5a;font-weight:800}
+input{font:700 16px "Segoe UI",system-ui,sans-serif;padding:10px;border-radius:10px;border:1px solid #ffffff40;background:#0006;color:#fff;text-align:center;width:190px;margin:6px 0}
+.keys{font-size:12px;opacity:.65;margin-top:10px}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="log"></div>
+<div id="pad"><button class="e"></button><button data-d="0,-1">▲</button><button class="e"></button><button data-d="-1,0">◀</button><button data-d="0,0">⏳</button><button data-d="1,0">▶</button><button class="e"></button><button data-d="0,1">▼</button><button class="e"></button></div>
+<div class="ov" id="menu"><div class="card">
+ <h1>LOST ON<br>THE PLAIN</h1>
+ <div class="sub">Exercise has ended. Everyone else has gone home. You have a compass, a ration pack and no idea where you are.<br><br>Follow the arrow to each <b>RV</b> 🚩. Fight angry sheep, lost officers and the OPFOR. Spend your cash in village <b>NAAFIs</b> 🏪. One life. No respawns.</div>
+ <button class="btn" id="goB">▶ START WALKING</button><br><button class="btn alt" id="hsB">🏆 Scores</button>
+ <div class="keys">Move: arrows / WASD / tap where you want to go · Wait: Space · Bump into enemies to fight</div>
+</div></div>
+<div class="ov hide" id="shop"><div class="card"><h2>🏪 VILLAGE NAAFI</h2><div class="sub" id="shopTxt"></div><div id="shopList"></div><button class="btn" id="shopDone">Leave</button></div></div>
+<div class="ov hide" id="perk"><div class="card"><h2>PROMOTION!</h2><div class="sub">Pick one. Choose wisely, there's no going back.</div><div id="perkList"></div></div></div>
+<div class="ov hide" id="over"><div class="card">
+ <h2 id="oT">KIA</h2><div class="sub" id="oS"></div>
+ <div id="nameRow"><input id="nameIn" maxlength="14" placeholder="Your name"><br><button class="btn" id="saveB">Save score</button></div>
+ <table id="hs"></table>
+ <div style="margin-top:10px"><button class="btn" id="againB">New exercise</button><button class="btn alt" id="oMenu">Menu</button></div>
+</div></div>
+<div class="ov hide" id="hsOv"><div class="card"><h2>ROLL OF HONOUR</h2><table id="hs2"></table><button class="btn" id="hsClose" style="margin-top:12px">Back</button></div></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const R1=()=>Math.random(),RI=(a,b)=>a+Math.floor(R1()*(b-a+1)),PICK=a=>a[Math.floor(R1()*a.length)];
+
+// ---------- noise / world ----------
+let SEED=1;
+function hash(x,y,s=0){let h=(x|0)*374761393+(y|0)*668265263+(SEED+s)*1442695041;h=(h^(h>>>13))*1274126177;h^=h>>>16;return(h>>>0)/4294967296}
+function vnoise(x,y,s){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+ const a=hash(xi,yi,s),b=hash(xi+1,yi,s),c=hash(xi,yi+1,s),d=hash(xi+1,yi+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}
+function fbm(x,y,s){return(vnoise(x,y,s)*.57+vnoise(x*2.1,y*2.1,s+7)*.29+vnoise(x*4.3,y*4.3,s+13)*.14)}
+const T={GRASS:0,DEEP:1,MUD:2,WOOD:3,TRACK:4,WALL:5,FLOOR:6,NAAFI:7,SHALLOW:8,BRIDGE:9};
+const BLOCK=new Set([T.DEEP,T.WALL]);
+const CH=16,chunks=new Map();
+function baseTile(x,y){
+ const e=fbm(x/30,y/30,1),m=fbm(x/17,y/17,2),r=Math.abs(fbm(x/46,y/46,3)-.5),rd=Math.abs(fbm(x/70,y/70,4)-.5);
+ if(e<.29)return T.DEEP;
+ if(rd<.013)return r<.03?T.BRIDGE:T.TRACK;
+ if(r<.022)return T.SHALLOW;
+ if(e<.33)return T.MUD;
+ if(m>.63)return T.WOOD;
+ if(m<.27)return T.MUD;
+ return T.GRASS;
+}
+function genChunk(cx,cy){
+ const tiles=new Uint8Array(CH*CH);
+ for(let j=0;j<CH;j++)for(let i=0;i<CH;i++)tiles[j*CH+i]=baseTile(cx*CH+i,cy*CH+j);
+ const near=Math.abs(cx)<=1&&Math.abs(cy)<=1;
+ let village=null;
+ if(!(cx===0&&cy===0)&&hash(cx,cy,50)<.17){
+  village={naafi:null};const houses=RI(2,4);let placed=0;
+  for(let k=0;k<houses*4&&placed<houses;k++){
+   const w=RI(4,6),h=RI(4,5),x0=RI(1,CH-w-1),y0=RI(1,CH-h-1);let ok=true;
+   for(let j=y0-1;j<=y0+h;j++)for(let i=x0-1;i<=x0+w;i++){const t=tiles[j*CH+i];if(t===T.DEEP||t===T.WALL||t===T.FLOOR)ok=false}
+   if(!ok)continue;
+   for(let j=y0;j<y0+h;j++)for(let i=x0;i<x0+w;i++)tiles[j*CH+i]=(i===x0||j===y0||i===x0+w-1||j===y0+h-1)?T.WALL:T.FLOOR;
+   const door=[x0+Math.floor(w/2),y0+h-1];tiles[door[1]*CH+door[0]]=T.FLOOR;
+   if(!village.naafi){const nx=x0+Math.floor(w/2),ny=y0+1;tiles[ny*CH+nx]=T.NAAFI;village.naafi=[cx*CH+nx,cy*CH+ny]}
+   placed++;
+  }
+  for(let j=0;j<CH;j++)for(let i=0;i<CH;i++){const t=tiles[j*CH+i];if(t===T.GRASS||t===T.MUD||t===T.WOOD)if(hash(cx*CH+i,cy*CH+j,61)<.35)tiles[j*CH+i]=T.TRACK}
+ }
+ const c={tiles,village};chunks.set(cx+','+cy,c);
+ if(G&&!near)populate(cx,cy,c);
+ return c;
+}
+function chunkAt(x,y){const cx=Math.floor(x/CH),cy=Math.floor(y/CH);return chunks.get(cx+','+cy)||genChunk(cx,cy)}
+function tileAt(x,y){const c=chunkAt(x,y);return c.tiles[(y-Math.floor(y/CH)*CH)*CH+(x-Math.floor(x/CH)*CH)]}
+function setTile(x,y,t){const c=chunkAt(x,y);c.tiles[(y-Math.floor(y/CH)*CH)*CH+(x-Math.floor(x/CH)*CH)]=t}
+
+// ---------- content ----------
+const FOES={
+ sheep:{ic:'🐑',n:'Angry Sheep',hp:4,atk:1,xp:3,cash:[0,2],sight:4,move:.6,lines:['Baaa! (aggressively)','The sheep stares into your soul.']},
+ gull:{ic:'🐦',n:'Thieving Seagull',hp:3,atk:1,xp:3,cash:[0,1],sight:7,move:1,steal:1,lines:['A seagull eyes up your ration pack.']},
+ rupert:{ic:'🧭',n:'Lost Rupert',hp:6,atk:1,xp:6,cash:[4,10],sight:6,move:.8,confuse:1,lines:['"I say, which way is north?"','"Trust me, I\'ve done the course."']},
+ opfor:{ic:'🪖',n:'OPFOR Rifleman',hp:9,atk:3,xp:8,cash:[2,6],sight:7,move:1,lines:['"BANG! You\'re dead!" "No I\'m not!"']},
+ pony:{ic:'🐴',n:'Wild Pony',hp:8,atk:2,xp:7,cash:[0,3],sight:6,move:1,fast:1,lines:['The pony neighs menacingly.']},
+ badger:{ic:'🦡',n:'Feral Badger',hp:12,atk:4,xp:12,cash:[1,4],sight:5,move:1,lines:['The badger has had enough of your nonsense.']},
+ warden:{ic:'🚙',n:'Range Warden',hp:15,atk:4,xp:15,cash:[6,14],sight:8,move:1,lines:['"Oi! You\'re out of bounds!"']},
+ rsm:{ic:'😤',n:'The RSM',hp:40,atk:6,xp:60,cash:[40,60],sight:9,move:1,boss:1,lines:['"GET OFF MY GRASS!"','"STAND STILL WHEN I\'M SHOUTING AT YOU!"']}};
+const TIERS=[['sheep','gull','rupert'],['sheep','gull','rupert','opfor','pony'],['opfor','pony','rupert','badger'],['opfor','badger','warden','pony'],['warden','badger','opfor']];
+const WEAPONS=[['👊','Bare Hands',0],['🥄','Mess Tin Spoon',1],['🗡️','Bayonet',2],['⛏️','Entrenching Tool',3],['🔦','Massive Torch',4],['🪵','Pace Stick',6],['🎺','Bugle of Doom',8]];
+const ARMOUR=[['👕','PT Vest',0],['🧥','Combat Jacket',1],['🦺','Body Armour',2],['🛡️','Osprey',3],['🧱','Literal Sandbags',5]];
+const PERKS=[
+ {ic:'❤️',n:'Hard as Nails',d:'+6 max HP and heal fully',f:p=>{p.mhp+=6;p.hp=p.mhp}},
+ {ic:'💪',n:'Gym Membership',d:'+1 attack',f:p=>p.atk++},
+ {ic:'🛡️',n:'Thick Skin',d:'+1 defence',f:p=>p.def++},
+ {ic:'👀',n:'Eagle Eye',d:'+2 vision range',f:p=>p.vis+=2},
+ {ic:'🥫',n:'Iron Stomach',d:'Food lasts 40% longer',f:p=>p.hunger*=.6},
+ {ic:'🍀',n:'Jammy Git',d:'More cash and loot from everything',f:p=>p.luck+=.5},
+ {ic:'🩹',n:'Battlefield Medic',d:'Heal 2 HP every kill',f:p=>p.medic+=2},
+ {ic:'🎯',n:'Crack Shot',d:'+15% critical hits',f:p=>p.crit+=.15}];
+
+let G=null;
+function populate(cx,cy,c){
+ const d=Math.min(TIERS.length-1,Math.floor(G.rv/2)),n=RI(1,3)+Math.min(4,Math.floor(G.rv/2));
+ for(let k=0;k<n;k++){const x=cx*CH+RI(0,CH-1),y=cy*CH+RI(0,CH-1),t=c.tiles[(y-cy*CH)*CH+(x-cx*CH)];if(BLOCK.has(t)||t===T.NAAFI||t===T.FLOOR)continue;spawnFoe(PICK(TIERS[d]),x,y)}
+ const items=RI(1,2)+(G.p.luck>0&&R1()<G.p.luck*.5?1:0);
+ for(let k=0;k<items;k++){const x=cx*CH+RI(0,CH-1),y=cy*CH+RI(0,CH-1);if(BLOCK.has(c.tiles[(y-cy*CH)*CH+(x-cx*CH)]))continue;const r=R1();G.items.push({x,y,t:r<.34?'ration':r<.58?'brew':r<.85?'cash':'kit'})}
+}
+function spawnFoe(k,x,y){const f=FOES[k],lv=1+G.rv*.12;G.foes.push({k,x,y,hp:Math.round(f.hp*lv),mhp:Math.round(f.hp*lv),atk:Math.round(f.atk*(1+G.rv*.08)),awake:false,fx:0,flash:0,rx:x,ry:y})}
+function passable(x,y){return!BLOCK.has(tileAt(x,y))}
+function foeAt(x,y){return G.foes.find(f=>f.x===x&&f.y===y)}
+
+// ---------- game ----------
+function newGame(){
+ SEED=(Math.random()*1e9)|0;chunks.clear();
+ G={p:{x:0,y:0,hp:20,mhp:20,atk:3,def:0,vis:8,food:100,hunger:1,luck:0,medic:0,crit:.08,lvl:1,xp:0,next:12,cash:5,w:0,a:0,rx:0,ry:0,flash:0,confused:0},
+  rv:0,kills:0,turn:0,foes:[],items:[],floats:[],seen:new Set(),target:null,log:[],over:false,bossUp:false,shake:0};
+ const p=G.p;
+ for(let r=0;r<20;r++){let found=false;for(let k=0;k<40;k++){const x=RI(-r,r),y=RI(-r,r);if(tileAt(x,y)===T.GRASS||tileAt(x,y)===T.TRACK){p.x=x;p.y=y;found=true;break}}if(found)break}
+ p.rx=p.x;p.ry=p.y;
+ for(let cy=-1;cy<=1;cy++)for(let cx=-1;cx<=1;cx++)if(cx||cy)populate(cx,cy,chunkAt(cx*CH,cy*CH));
+ G.foes=G.foes.filter(f=>Math.abs(f.x-p.x)+Math.abs(f.y-p.y)>6);
+ newTarget();cam.x=p.x;cam.y=p.y;
+ log('🧭 Exercise ENDEX. Transport has left. Typical. Find the first RV.');
+ reveal();['menu','over','hsOv'].forEach(i=>$(i).classList.add('hide'));
+}
+function newTarget(){
+ const p=G.p,dist=26+G.rv*5,a=R1()*Math.PI*2;let x=Math.round(p.x+Math.cos(a)*dist),y=Math.round(p.y+Math.sin(a)*dist);
+ for(let k=0;k<200&&!(tileAt(x,y)===T.GRASS||tileAt(x,y)===T.TRACK);k++){x+=RI(-1,1);y+=RI(-1,1)}
+ G.target={x,y};
+ if((G.rv+1)%5===0){G.bossUp=true;let bx=x+2,by=y;if(!passable(bx,by)){bx=x;by=y+1}spawnFoe('rsm',bx,by);log('😤 Word is the RSM is waiting at the next RV. Polish your boots.')}
+}
+function log(s){G.log.push(s);if(G.log.length>5)G.log.shift();$('log').innerHTML=G.log.map(l=>`<div>${l}</div>`).join('')}
+function float(x,y,t,c){G.floats.push({x,y,t,c,life:1})}
+const isNight=()=>(G.turn%360)>240;
+const vision=()=>Math.max(3,G.p.vis-(isNight()?3:0));
+function reveal(){const p=G.p,v=vision();for(let j=-v;j<=v;j++)for(let i=-v;i<=v;i++)if(i*i+j*j<=v*v+1)G.seen.add((p.x+i)+','+(p.y+j))}
+function dmgRoll(atk,def,crit){let d=Math.max(1,atk+RI(-1,1)-def);const c=R1()<crit;if(c)d=Math.ceil(d*1.8);return[d,c]}
+function step(dx,dy){
+ if(!G||G.over||busy())return;
+ const p=G.p;
+ if(p.confused>0&&(dx||dy)&&R1()<.35){[dx,dy]=PICK([[1,0],[-1,0],[0,1],[0,-1]]);log('🌀 You follow the Rupert\'s directions. Wrong way.')}
+ if(dx||dy){
+  const nx=p.x+dx,ny=p.y+dy,f=foeAt(nx,ny);
+  if(f){attack(f)}
+  else if(passable(nx,ny)){p.x=nx;p.y=ny;const t=tileAt(nx,ny);
+   if(t===T.SHALLOW&&R1()<.3)log('💦 Wading through the river. Your socks will never recover.');
+   if(t===T.NAAFI){openShop();}
+   pickup();
+  }else{log(tileAt(nx,ny)===T.DEEP?'🌊 Too deep. You can\'t swim in 40kg of kit.':'🧱 That\'s a wall. Even you know that.');return}
+ }
+ endTurn();
+}
+function pickup(){
+ const p=G.p,i=G.items.findIndex(it=>it.x===p.x&&it.y===p.y);if(i<0)return;const it=G.items.splice(i,1)[0],lk=1+p.luck;
+ if(it.t==='ration'){p.food=Math.min(100,p.food+35);log('🥫 Ration pack! Beef stew. Again.');float(p.x,p.y,'+FOOD','#ffcf5a')}
+ else if(it.t==='brew'){const h=Math.min(p.mhp-p.hp,8);p.hp+=h;log('☕ A perfectly good brew, just left here. +'+h+' HP');float(p.x,p.y,'+'+h,'#7fe07f')}
+ else if(it.t==='cash'){const c=Math.round(RI(3,9)*lk);p.cash+=c;log(`💷 Found £${c} in a hedge.`);float(p.x,p.y,'+£'+c,'#ffe066')}
+ else{const r=R1();if(r<.5&&p.w<WEAPONS.length-2){p.w++;log(`📦 Kit box! New weapon: ${WEAPONS[p.w][0]} ${WEAPONS[p.w][1]}`)}else if(p.a<ARMOUR.length-2){p.a++;log(`📦 Kit box! New armour: ${ARMOUR[p.a][0]} ${ARMOUR[p.a][1]}`)}else{p.cash+=25;log('📦 Kit box! It\'s full of cash. Don\'t ask.')}float(p.x,p.y,'KIT!','#7fd0ff')}
+ tone(700,.08);
+}
+function attack(f){
+ const p=G.p,F=FOES[f.k],[d,c]=dmgRoll(p.atk+WEAPONS[p.w][2],0,p.crit);
+ f.hp-=d;f.flash=1;f.awake=true;G.shake=c?7:3;float(f.x,f.y,(c?'CRIT ':'')+d,c?'#ffcf5a':'#fff');tone(c?520:260,.08,'square',.07);
+ if(f.hp<=0){
+  G.foes.splice(G.foes.indexOf(f),1);G.kills++;const cash=Math.round(RI(...F.cash)*(1+p.luck));p.cash+=cash;
+  log(`⚔️ ${F.n} defeated${cash?` · +£${cash}`:''}`);if(p.medic){p.hp=Math.min(p.mhp,p.hp+p.medic)}
+  if(F.boss){log('🏆 You beat the RSM! Nobody will believe you.');G.items.push({x:f.x,y:f.y,t:'kit'},{x:f.x,y:f.y,t:'kit'});G.bossUp=false}
+  else if(R1()<.12*(1+p.luck))G.items.push({x:f.x,y:f.y,t:PICK(['ration','brew','cash'])});
+  gainXp(F.xp);
+ }
+}
+function gainXp(n){const p=G.p;p.xp+=n;if(p.xp>=p.next){p.xp-=p.next;p.lvl++;p.next=Math.round(p.next*1.45);openPerk()}}
+function endTurn(){
+ const p=G.p;G.turn++;
+ if(G.turn%Math.max(1,Math.round(3/p.hunger))===0){const t=tileAt(p.x,p.y);p.food=Math.max(0,p.food-((t===T.MUD||t===T.SHALLOW)?2:1))}
+ if(p.food<=0&&G.turn%3===0){hurt(1,'Starved. Should\'ve eaten the beef stew.');log('😩 You are starving. Find a ration pack!')}
+ if(p.confused>0)p.confused--;
+ if(G.turn%360===241)log('🌙 Night falls. Everything gets braver. You don\'t.');
+ if(G.turn%360===0)log('🌅 Dawn. Somewhere a bugle plays. Badly.');
+ if(G.turn%24===0&&p.hp<p.mhp&&p.food>20)p.hp++;
+ for(const f of G.foes.slice()){
+  if(G.over)break;const F=FOES[f.k],dx=p.x-f.x,dy=p.y-f.y,dist=Math.abs(dx)+Math.abs(dy);
+  if(dist>40)continue;
+  const sight=F.sight+(isNight()?2:0);if(dist<=sight)f.awake=true;
+  const moves=F.fast&&R1()<.5?2:1;
+  for(let m=0;m<moves;m++){
+   const ddx=p.x-f.x,ddy=p.y-f.y,dd=Math.abs(ddx)+Math.abs(ddy);
+   if(dd===1){foeHit(f,F);break}
+   if(f.awake&&dd<=sight+4){if(R1()>F.move)break;const opts=[];if(ddx)opts.push([Math.sign(ddx),0]);if(ddy)opts.push([0,Math.sign(ddy)]);if(Math.abs(ddy)>Math.abs(ddx))opts.reverse();
+    for(const[mx,my]of opts){const nx=f.x+mx,ny=f.y+my;if(passable(nx,ny)&&!foeAt(nx,ny)&&!(nx===p.x&&ny===p.y)&&tileAt(nx,ny)!==T.NAAFI){f.x=nx;f.y=ny;break}}}
+   else if(R1()<.3){const[mx,my]=PICK([[1,0],[-1,0],[0,1],[0,-1]]),nx=f.x+mx,ny=f.y+my;if(passable(nx,ny)&&!foeAt(nx,ny)&&!(nx===p.x&&ny===p.y))f.x=nx,f.y=ny;f.awake=false}
+  }
+ }
+ if(G.target&&p.x===G.target.x&&p.y===G.target.y)reachRV();
+ if(G.foes.length>400)G.foes=G.foes.filter(f=>Math.abs(f.x-p.x)+Math.abs(f.y-p.y)<60);
+ reveal();
+}
+function foeHit(f,F){
+ const p=G.p,[d]=dmgRoll(f.atk,p.def+ARMOUR[p.a][2],.05);
+ if(R1()<.25&&F.lines)log(`${F.ic} ${PICK(F.lines)}`);
+ if(F.steal&&p.food>0&&R1()<.5){p.food=Math.max(0,p.food-20);log('🐦 The seagull nicked half your ration pack!')}
+ if(F.confuse&&R1()<.4){p.confused=12;log('🌀 The Rupert gives you "directions". Your compass is spinning.')}
+ hurt(d,`${PICK(['Headbutted','Flattened','Sorted out','Done over','Ambushed'])} by ${/^[AEIOU]/.test(F.n)?'an':'a'} ${F.n}.`);
+}
+function hurt(d,cause){const p=G.p;p.hp-=d;p.flash=1;G.shake=6;float(p.x,p.y,'-'+d,'#ff5a5a');tone(140,.12,'sawtooth',.08);if(p.hp<=0){p.hp=0;die(cause)}}
+function reachRV(){
+ const p=G.p;G.rv++;const bonus=Math.round(15*(1+p.luck));p.cash+=bonus;p.hp=Math.min(p.mhp,p.hp+6);p.food=Math.min(100,p.food+20);
+ log(`🚩 RV ${G.rv} reached! "Where have you been?!" +£${bonus}, +6 HP, a cold sausage roll.`);[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*100));gainXp(10+G.rv*2);newTarget();
+}
+function die(cause){
+ G.over=true;const p=G.p,score=G.rv*150+G.kills*10+p.lvl*25+p.cash;G.score=score;G.cause=cause;
+ $('oT').textContent=PICK(['KIA','ENDEX (FOR YOU)','MEDIC!!']);
+ $('oS').innerHTML=`<i>${esc(cause)}</i><br><br>RVs reached: <b>${G.rv}</b> · Kills: <b>${G.kills}</b> · Level <b>${p.lvl}</b> · £${p.cash}<br>Survived ${G.turn} turns · Score <b style="color:#ffcf5a">${score.toLocaleString()}</b>`;
+ saved=false;$('nameIn').value=LS.get('arcade_name','');$('nameRow').style.display='';renderHS('hs');setTimeout(()=>$('over').classList.remove('hide'),700);
+}
+const busy=()=>!$('shop').classList.contains('hide')||!$('perk').classList.contains('hide')||!$('over').classList.contains('hide')||!$('menu').classList.contains('hide');
+
+// ---------- shop & perks ----------
+function openShop(){
+ const p=G.p;const wN=WEAPONS[p.w+1],aN=ARMOUR[p.a+1],wC=20+p.w*22,aC=24+p.a*26;
+ const items=[
+  {ic:'☕',n:'NAAFI Brew & Bacon Butty',d:'Heal to full',c:12,ok:p.hp<p.mhp,f:()=>{p.hp=p.mhp}},
+  {ic:'🥫',n:'Ration Pack',d:'+50 food',c:8,ok:p.food<100,f:()=>{p.food=Math.min(100,p.food+50)}},
+  wN&&{ic:wN[0],n:wN[1],d:`Weapon upgrade: +${wN[2]} attack (now +${WEAPONS[p.w][2]})`,c:wC,ok:true,f:()=>{p.w++}},
+  aN&&{ic:aN[0],n:aN[1],d:`Armour upgrade: +${aN[2]} defence (now +${ARMOUR[p.a][2]})`,c:aC,ok:true,f:()=>{p.a++}},
+  {ic:'🗺️',n:'Proper Map',d:'+1 vision, permanently',c:30+p.vis*4,ok:true,f:()=>{p.vis++}},
+  {ic:'💊',n:'Ibuprofen (the Army cure-all)',d:'+3 max HP',c:35,ok:true,f:()=>{p.mhp+=3;p.hp+=3}}].filter(Boolean);
+ $('shopTxt').innerHTML=`You have <b>£${p.cash}</b>. The lady behind the counter calls you "duck".`;
+ $('shopList').innerHTML=items.map((it,i)=>`<div class="opt ${!it.ok||p.cash<it.c?'no':''}" data-i="${i}"><div class="i">${it.ic}</div><div class="d"><b>${it.n}</b>${it.d}</div><div class="c">£${it.c}</div></div>`).join('');
+ $('shopList').querySelectorAll('.opt').forEach(el=>el.onclick=()=>{const it=items[+el.dataset.i];if(!it.ok||p.cash<it.c)return;p.cash-=it.c;it.f();tone(880,.1);log(`🏪 Bought ${it.n}.`);openShop()});
+ $('shop').classList.remove('hide');
+}
+$('shopDone').onclick=()=>$('shop').classList.add('hide');
+function openPerk(){const opts=[...PERKS].sort(()=>R1()-.5).slice(0,3);$('perkList').innerHTML=opts.map((o,i)=>`<div class="opt" data-i="${i}"><div class="i">${o.ic}</div><div class="d"><b>${o.n}</b>${o.d}</div></div>`).join('');
+ $('perkList').querySelectorAll('.opt').forEach(el=>el.onclick=()=>{opts[+el.dataset.i].f(G.p);$('perk').classList.add('hide');log(`🎖️ Promoted to level ${G.p.lvl}: ${opts[+el.dataset.i].n}`);reveal()});
+ $('perk').classList.remove('hide');[659,784,988].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*90))}
+
+// ---------- drawing ----------
+const cv=$('cv'),g=cv.getContext('2d');const VW=960,VH=540,TS=40;let SC=1,OX=0,OY=0;
+function fit(){const d=Math.min(devicePixelRatio||1,2);cv.width=innerWidth*d;cv.height=innerHeight*d;SC=Math.min(cv.width/VW,cv.height/VH);OX=(cv.width-VW*SC)/2;OY=(cv.height-VH*SC)/2}
+addEventListener('resize',fit);fit();
+const cam={x:0,y:0};const EMOJI='"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+function tileDraw(t,x,y,sx,sy,time){
+ const h=hash(x,y,90);
+ switch(t){
+  case T.GRASS:g.fillStyle=h<.5?'#5f8a3a':'#5a8436';g.fillRect(sx,sy,TS,TS);if(h>.65){g.strokeStyle='#7aa84a';g.lineWidth=2;g.beginPath();g.moveTo(sx+10+h*12,sy+28);g.lineTo(sx+12+h*12,sy+20);g.moveTo(sx+16+h*12,sy+28);g.lineTo(sx+19+h*12,sy+21);g.stroke()}if(h<.04){g.fillStyle='#f0e070';g.beginPath();g.arc(sx+20,sy+20,3,0,7);g.fill()}break;
+  case T.WOOD:g.fillStyle='#4e7530';g.fillRect(sx,sy,TS,TS);g.fillStyle='#0003';g.beginPath();g.ellipse(sx+22,sy+32,14,6,0,0,7);g.fill();g.fillStyle='#5a3a1e';g.fillRect(sx+18,sy+22,5,11);g.fillStyle=h<.5?'#2f5a1e':'#3a6a24';g.beginPath();g.arc(sx+20,sy+16,13,0,7);g.fill();g.fillStyle='#ffffff14';g.beginPath();g.arc(sx+16,sy+11,5,0,7);g.fill();break;
+  case T.DEEP:{const gr=g.createLinearGradient(sx,sy,sx,sy+TS);gr.addColorStop(0,'#2a5a8a');gr.addColorStop(1,'#1e4670');g.fillStyle=gr;g.fillRect(sx,sy,TS,TS);g.strokeStyle='#ffffff26';g.lineWidth=2;const o=Math.sin(time/700+x*.7+y)*4;g.beginPath();g.moveTo(sx+6,sy+18+o);g.quadraticCurveTo(sx+14,sy+13+o,sx+22,sy+18+o);g.stroke();break}
+  case T.SHALLOW:g.fillStyle='#4f8ab0';g.fillRect(sx,sy,TS,TS);g.strokeStyle='#ffffff30';g.lineWidth=1.5;{const o=(time/60+x*13)%TS;g.beginPath();g.moveTo(sx,sy+o);g.lineTo(sx+TS,sy+o);g.stroke()}break;
+  case T.MUD:g.fillStyle='#6f5a36';g.fillRect(sx,sy,TS,TS);g.fillStyle='#5a4628';g.beginPath();g.ellipse(sx+12+h*14,sy+14+h*10,9,5,0,0,7);g.fill();break;
+  case T.TRACK:case T.BRIDGE:g.fillStyle=t===T.BRIDGE?'#8a6a42':'#a68a5a';g.fillRect(sx,sy,TS,TS);g.strokeStyle=t===T.BRIDGE?'#5a4026':'#8a7046';g.lineWidth=2;if(t===T.BRIDGE)for(let k=6;k<TS;k+=9){g.beginPath();g.moveTo(sx,sy+k);g.lineTo(sx+TS,sy+k);g.stroke()}else{g.beginPath();g.moveTo(sx+12,sy);g.lineTo(sx+12,sy+TS);g.moveTo(sx+28,sy);g.lineTo(sx+28,sy+TS);g.stroke()}break;
+  case T.WALL:g.fillStyle='#8a8478';g.fillRect(sx,sy,TS,TS);g.strokeStyle='#5a564c';g.lineWidth=2;g.strokeRect(sx+1,sy+1,TS-2,TS/2-1);g.strokeRect(sx+1,sy+TS/2,TS-2,TS/2-1);g.fillStyle='#a8a296';g.fillRect(sx,sy,TS,4);break;
+  case T.FLOOR:g.fillStyle='#9a7a52';g.fillRect(sx,sy,TS,TS);g.strokeStyle='#7a5e3c';g.lineWidth=1;for(let k=10;k<TS;k+=10){g.beginPath();g.moveTo(sx,sy+k);g.lineTo(sx+TS,sy+k);g.stroke()}break;
+  case T.NAAFI:g.fillStyle='#9a7a52';g.fillRect(sx,sy,TS,TS);g.fillStyle='#c8102e';g.fillRect(sx+2,sy+2,TS-4,14);g.fillStyle='#fff';g.font='800 9px Segoe UI,sans-serif';g.textAlign='center';g.fillText('NAAFI',sx+TS/2,sy+12);g.font=`22px ${EMOJI}`;g.fillText('🏪',sx+TS/2,sy+36);break;
+ }
+}
+function emoji(ic,sx,sy,size=28,bob=0){g.fillStyle='#0005';g.beginPath();g.ellipse(sx+TS/2,sy+TS-6,12,4,0,0,7);g.fill();g.font=`${size}px ${EMOJI}`;g.textAlign='center';g.textBaseline='middle';g.fillText(ic,sx+TS/2,sy+TS/2-2+bob);g.textBaseline='alphabetic'}
+function draw(time){
+ g.setTransform(1,0,0,1,0,0);g.fillStyle='#000';g.fillRect(0,0,cv.width,cv.height);
+ if(!G){return}
+ const p=G.p;p.rx+=(p.x-p.rx)*.35;p.ry+=(p.y-p.ry)*.35;cam.x+=(p.rx-cam.x)*.2;cam.y+=(p.ry-cam.y)*.2;
+ const sh=G.shake?(R1()-.5)*G.shake:0;G.shake=Math.max(0,G.shake-.6);
+ g.setTransform(SC,0,0,SC,OX+sh*SC,OY+sh*SC);g.save();g.beginPath();g.rect(0,0,VW,VH);g.clip();
+ const ox=VW/2-TS/2-cam.x*TS,oy=VH/2-TS/2-cam.y*TS;
+ const x0=Math.floor(cam.x-VW/2/TS)-1,x1=Math.ceil(cam.x+VW/2/TS)+1,y0=Math.floor(cam.y-VH/2/TS)-1,y1=Math.ceil(cam.y+VH/2/TS)+1;
+ const v=vision();
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const sx=ox+x*TS,sy=oy+y*TS;if(!G.seen.has(x+','+y)){g.fillStyle='#07090a';g.fillRect(sx,sy,TS,TS);continue}tileDraw(tileAt(x,y),x,y,sx,sy,time)}
+ for(const it of G.items){if(!G.seen.has(it.x+','+it.y))continue;const d=Math.hypot(it.x-p.x,it.y-p.y);if(d>v+.5)continue;emoji({ration:'🥫',brew:'☕',cash:'💷',kit:'📦'}[it.t],ox+it.x*TS,oy+it.y*TS,22,Math.sin(time/300+it.x)*2)}
+ if(G.target){const t=G.target;if(G.seen.has(t.x+','+t.y)){const sx=ox+t.x*TS,sy=oy+t.y*TS;g.fillStyle=`rgba(255,80,60,${.25+.15*Math.sin(time/200)})`;g.beginPath();g.arc(sx+TS/2,sy+TS/2,26,0,7);g.fill();emoji('🚩',sx,sy,30)}}
+ for(const f of G.foes){const d=Math.abs(f.x-p.x)+Math.abs(f.y-p.y);if(Math.hypot(f.x-p.x,f.y-p.y)>v+.5)continue;f.rx+=(f.x-f.rx)*.3;f.ry+=(f.y-f.ry)*.3;const sx=ox+f.rx*TS,sy=oy+f.ry*TS,F=FOES[f.k];
+  emoji(F.ic,sx,sy,F.boss?36:28,Math.sin(time/250+f.x)*1.5);
+  if(f.flash>0){g.fillStyle=`rgba(255,255,255,${f.flash*.6})`;g.fillRect(sx+6,sy+4,TS-12,TS-8);f.flash-=.08}
+  if(f.hp<f.mhp||F.boss){g.fillStyle='#000a';g.fillRect(sx+4,sy-4,TS-8,5);g.fillStyle=F.boss?'#ff4fd8':'#ff5a5a';g.fillRect(sx+5,sy-3,(TS-10)*Math.max(0,f.hp/f.mhp),3)}
+  if(f.awake&&d<=6){g.fillStyle='#ffcf3a';g.font='900 14px Segoe UI,sans-serif';g.textAlign='center';g.fillText('!',sx+TS-6,sy+8)}}
+ const psx=ox+p.rx*TS,psy=oy+p.ry*TS;emoji('💂',psx,psy,30,Math.sin(time/300)*1.2);if(p.flash>0){g.fillStyle=`rgba(255,60,60,${p.flash*.5})`;g.fillRect(psx+4,psy+2,TS-8,TS-4);p.flash-=.07}
+ const night=isNight();
+ const lg=g.createRadialGradient(psx+TS/2,psy+TS/2,TS*(v-2),psx+TS/2,psy+TS/2,TS*(v+1));lg.addColorStop(0,'#0000');lg.addColorStop(1,night?'#000a1cee':'#050a04aa');g.fillStyle=lg;g.fillRect(0,0,VW,VH);
+ if(night){g.fillStyle='#0a1440';g.globalAlpha=.25;g.fillRect(0,0,VW,VH);g.globalAlpha=1}
+ for(const fl of G.floats){g.globalAlpha=Math.max(0,fl.life);g.fillStyle=fl.c;g.font='900 18px Impact,Arial Black,sans-serif';g.textAlign='center';g.fillText(fl.t,ox+fl.x*TS+TS/2,oy+fl.y*TS-4-(1-fl.life)*30);fl.life-=.025}g.globalAlpha=1;G.floats=G.floats.filter(f=>f.life>0);
+ if(G.target){const dx=G.target.x-p.x,dy=G.target.y-p.y,dist=Math.round(Math.hypot(dx,dy));let a=Math.atan2(dy,dx);if(p.confused>0)a+=Math.sin(time/90)*2.5;
+  const cx=VW/2+Math.cos(a)*Math.min(VW/2-60,210),cy=VH/2+Math.sin(a)*Math.min(VH/2-60,170);
+  if(dist>4){g.save();g.translate(cx,cy);g.rotate(a);g.fillStyle='#ff5a3a';g.strokeStyle='#000';g.lineWidth=2;g.beginPath();g.moveTo(18,0);g.lineTo(-10,-11);g.lineTo(-4,0);g.lineTo(-10,11);g.closePath();g.fill();g.stroke();g.restore();g.fillStyle='#fff';g.font='800 12px Segoe UI,sans-serif';g.textAlign='center';g.fillText(p.confused>0?'??m':dist*10+'m',cx,cy+26)}}
+ hud(time);minimap();
+ g.restore();
+}
+function bar(x,y,w,f,c,lbl){g.fillStyle='#000a';g.beginPath();g.roundRect(x,y,w,18,9);g.fill();g.fillStyle=c;g.beginPath();g.roundRect(x+2,y+2,Math.max(0,(w-4)*Math.min(1,f)),14,7);g.fill();g.fillStyle='#fff';g.font='800 11px Segoe UI,sans-serif';g.textAlign='left';g.fillText(lbl,x+8,y+13)}
+function hud(){
+ const p=G.p;g.fillStyle='#000b';g.beginPath();g.roundRect(12,12,262,118,14);g.fill();
+ bar(22,22,242,p.hp/p.mhp,p.hp/p.mhp<.3?'#ff4f4f':'#4fd36b',`HP ${p.hp}/${p.mhp}`);
+ bar(22,44,242,p.food/100,p.food<25?'#ff8f3a':'#e8c050',`FOOD ${Math.round(p.food)}`);
+ bar(22,66,242,p.xp/p.next,'#7f9fff',`LEVEL ${p.lvl} · XP ${p.xp}/${p.next}`);
+ g.fillStyle='#eee';g.font='700 13px Segoe UI,sans-serif';g.fillText(`${WEAPONS[p.w][0]} +${p.atk+WEAPONS[p.w][2]}   ${ARMOUR[p.a][0]} +${p.def+ARMOUR[p.a][2]}   💷 £${p.cash}`,22,104);
+ g.fillStyle='#ffcf5a';g.fillText(`🚩 RV ${G.rv}   ⚔️ ${G.kills}   ${isNight()?'🌙 Night':'☀️ Day'}`,22,122);
+}
+function minimap(){
+ const p=G.p,S=3,R=26,mx=VW-R*2*S-16,my=12;g.fillStyle='#000c';g.beginPath();g.roundRect(mx-4,my-4,R*2*S+8,R*2*S+8,10);g.fill();
+ const col=['#5f8a3a','#2a5a8a','#6f5a36','#3a6a24','#a68a5a','#8a8478','#9a7a52','#ff3a3a','#4f8ab0','#8a6a42'];
+ for(let j=-R;j<R;j++)for(let i=-R;i<R;i++){const x=p.x+i,y=p.y+j;if(!G.seen.has(x+','+y))continue;g.fillStyle=col[tileAt(x,y)];g.fillRect(mx+(i+R)*S,my+(j+R)*S,S,S)}
+ g.fillStyle='#fff';g.fillRect(mx+R*S-1,my+R*S-1,S+2,S+2);
+ if(G.target){const dx=G.target.x-p.x,dy=G.target.y-p.y;if(Math.abs(dx)<R&&Math.abs(dy)<R){g.fillStyle='#ff3a3a';g.fillRect(mx+(dx+R)*S-1,my+(dy+R)*S-1,S+3,S+3)}}
+}
+function loop(t){draw(t);requestAnimationFrame(loop)}
+
+// ---------- input ----------
+const KEYS={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],Space:[0,0],Period:[0,0],Numpad8:[0,-1],Numpad2:[0,1],Numpad4:[-1,0],Numpad6:[1,0],Numpad5:[0,0]};
+let lastKey=0;
+addEventListener('keydown',e=>{initAudio();const k=KEYS[e.code];if(!k)return;e.preventDefault();const now=performance.now();if(e.repeat&&now-lastKey<110)return;lastKey=now;step(k[0],k[1])});
+cv.addEventListener('pointerdown',e=>{initAudio();if(!G||busy())return;const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*(cv.width/r.width),py=(e.clientY-r.top)*(cv.height/r.height);const wx=(px-OX)/SC-VW/2,wy=(py-OY)/SC-VH/2;if(Math.hypot(wx,wy)<TS*.6)return step(0,0);Math.abs(wx)>Math.abs(wy)?step(Math.sign(wx),0):step(0,Math.sign(wy))});
+if(matchMedia('(pointer:coarse)').matches){$('pad').style.display='grid'}
+$('pad').querySelectorAll('button[data-d]').forEach(b=>b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();initAudio();const[x,y]=b.dataset.d.split(',').map(Number);step(x,y)}));
+
+// ---------- scores ----------
+function renderHS(id,mark){const hs=LS.get('plain_scores',[]);$(id).innerHTML=hs.length?hs.map((h,i)=>`<tr class="${i===mark?'me':''}"><td>${i+1}</td><td>${esc(h.n)}</td><td>${h.s.toLocaleString()}</td><td>🚩${h.rv}</td><td style="opacity:.7;font-size:12px">${esc(h.c)}</td></tr>`).join(''):'<tr><td></td><td>Nobody has made it home yet.</td></tr>'}
+let saved=false;
+$('saveB').onclick=()=>{if(saved)return;saved=true;const n=($('nameIn').value.trim()||'Lost Soul').slice(0,14);LS.set('arcade_name',n);const hs=LS.get('plain_scores',[]),e={n,s:G.score,rv:G.rv,c:G.cause.slice(0,60),d:Date.now()};hs.push(e);hs.sort((a,b)=>b.s-a.s);const top=hs.slice(0,10);LS.set('plain_scores',top);$('nameRow').style.display='none';renderHS('hs',top.indexOf(e))};
+$('goB').onclick=$('againB').onclick=newGame;
+$('oMenu').onclick=()=>{$('over').classList.add('hide');$('menu').classList.remove('hide')};
+$('hsB').onclick=()=>{$('menu').classList.add('hide');renderHS('hs2');$('hsOv').classList.remove('hide')};$('hsClose').onclick=()=>{$('hsOv').classList.add('hide');$('menu').classList.remove('hide')};
+let AC=null;function initAudio(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
+function tone(f,d=.1,type='triangle',v=.08){if(!AC)return;try{const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);gn.gain.setValueAtTime(v,t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn).connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+window.__plain={step,get G(){return G},tileAt};
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

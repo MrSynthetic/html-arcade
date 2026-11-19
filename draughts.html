@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Draughts</title>
+<style>
+:root{--gold:#e8b84b;--txt:#f4ead8;--s:min(92vw,calc(100dvh - 150px),640px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:radial-gradient(120% 90% at 50% 0%,#3d2b1c,#120d09);color:var(--txt);font-family:"Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px}
+#hud{display:flex;gap:8px;align-items:center;width:var(--s);justify-content:space-between}
+.side{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;background:#ffffff0d;border:2px solid transparent;font-weight:700;font-size:14px;transition:.2s;white-space:nowrap}
+.side.on{border-color:var(--gold);box-shadow:0 0 18px #e8b84b55;background:#ffffff18}
+.side small{opacity:.7;font-weight:600}
+.dot{width:18px;height:18px;border-radius:50%;flex:none}
+.dot.r{background:radial-gradient(circle at 35% 30%,#ff7a6a,#b0281c 60%,#6a120c)}
+.dot.b{background:radial-gradient(circle at 35% 30%,#7a7a7a,#2a2a2a 60%,#0a0a0a)}
+#msg{font-size:14px;opacity:.9;text-align:center;min-height:20px;font-weight:600}
+#msg.warn{color:#ffb35a}
+canvas{width:var(--s);height:var(--s);border-radius:10px;box-shadow:0 20px 60px #000a,0 0 0 7px #6a4426,0 0 0 10px #2a1a0e;touch-action:none;cursor:pointer}
+#bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+button{font:700 14px "Segoe UI",system-ui,sans-serif;color:var(--txt);background:#ffffff14;border:1px solid #ffffff30;border-radius:10px;padding:8px 14px;cursor:pointer}
+button:hover{background:#ffffff26}
+button:disabled{opacity:.4;cursor:default}
+.ov{position:fixed;inset:0;background:#0b0806e8;display:flex;align-items:center;justify-content:center;z-index:5;padding:14px}
+.ov.hide{display:none}
+.card{background:linear-gradient(#2e2219,#1a130d);border:2px solid #6a4426;border-radius:18px;padding:24px 22px;width:min(440px,94vw);text-align:center;box-shadow:0 30px 80px #000;max-height:94vh;overflow:auto}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:46px;color:var(--gold);letter-spacing:3px;text-shadow:0 3px 0 #000}
+.sub{opacity:.75;margin:4px 0 18px;font-size:14px}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.big{font-size:17px;padding:12px 18px;background:linear-gradient(#f2cf74,#c9962e);color:#2a1a08;border:none;box-shadow:0 4px 0 #7a5410}
+.big:hover{background:linear-gradient(#ffe08a,#d9a63e)}
+.lv{min-width:96px}
+.lv.on{background:var(--gold);color:#2a1a08;border-color:var(--gold)}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+td,th{padding:5px 4px;border-bottom:1px solid #ffffff14}
+th{opacity:.7;font-weight:600}
+.res{font-size:30px;font-family:Georgia,serif;color:var(--gold);margin-bottom:6px}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="hud">
+  <div class="side" id="sTop"><span class="dot b"></span><span id="nTop">Computer</span> <small id="cTop">12</small></div>
+  <div id="msg"></div>
+  <div class="side" id="sBot"><span class="dot r"></span><span id="nBot">You</span> <small id="cBot">12</small></div>
+ </div>
+ <canvas id="cv"></canvas>
+ <div id="bar">
+  <button id="undoB">↶ Undo</button>
+  <button id="hintB">💡 Hint</button>
+  <button id="menuB">☰ Menu</button>
+ </div>
+</div>
+
+<div class="ov" id="menu">
+ <div class="card">
+  <h1>DRAUGHTS</h1>
+  <div class="sub">English rules · captures are compulsory · kings move both ways</div>
+  <div class="row" id="lvRow">
+   <button class="lv" data-l="0">Easy</button><button class="lv" data-l="1">Normal</button><button class="lv" data-l="2">Hard</button>
+  </div>
+  <div class="row"><button class="big" id="playCpu">▶ Play the Computer</button></div>
+  <div class="row"><button id="play2">👥 2 Players (same screen)</button></div>
+  <table id="stats"></table>
+ </div>
+</div>
+
+<div class="ov hide" id="over">
+ <div class="card">
+  <div class="res" id="resT"></div>
+  <div class="sub" id="resS"></div>
+  <div class="row"><button class="big" id="againB">Play again</button><button id="toMenu">Menu</button></div>
+ </div>
+</div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const LV=['Easy','Normal','Hard'];
+
+// ---------- rules ----------
+const DIRS=[[-1,-1],[-1,1],[1,-1],[1,1]];
+const dirsFor=p=>Math.abs(p)===2?DIRS:(p>0?DIRS.slice(0,2):DIRS.slice(2));
+function initBoard(){const b=new Int8Array(64);for(let r=0;r<8;r++)for(let c=0;c<8;c++)if((r+c)%2){if(r<3)b[r*8+c]=-1;else if(r>4)b[r*8+c]=1}return b}
+function findJumps(b,start,p,r,c,path,capd,out){
+ let found=false;
+ for(const[dr,dc]of dirsFor(p)){
+  const lr=r+2*dr,lc=c+2*dc;if(lr<0||lr>7||lc<0||lc>7)continue;
+  const m=(r+dr)*8+c+dc,l=lr*8+lc,mp=b[m];
+  if(!mp||Math.sign(mp)===Math.sign(p)||capd.includes(m))continue;
+  if(b[l]&&l!==start)continue;
+  found=true;
+  const crown=Math.abs(p)===1&&lr===(p>0?0:7),np=path.concat(l),nc=capd.concat(m);
+  if(crown)out.push({from:start,to:l,path:np,caps:nc,crown:true});
+  else if(!findJumps(b,start,p,lr,lc,np,nc,out))out.push({from:start,to:l,path:np,caps:nc,crown:false});
+ }
+ return found;
+}
+function genMoves(b,side){
+ const caps=[],simple=[];
+ for(let i=0;i<64;i++){
+  const p=b[i];if(!p||Math.sign(p)!==side)continue;
+  const r=i>>3,c=i&7;
+  findJumps(b,i,p,r,c,[i],[],caps);
+  if(caps.length)continue;
+  for(const[dr,dc]of dirsFor(p)){const nr=r+dr,nc=c+dc;if(nr<0||nr>7||nc<0||nc>7)continue;const j=nr*8+nc;
+   if(!b[j])simple.push({from:i,to:j,path:[i,j],caps:[],crown:Math.abs(p)===1&&nr===(side>0?0:7)})}
+ }
+ return caps.length?caps:simple;
+}
+function applyMove(b,m){const nb=b.slice(),p=nb[m.from];nb[m.from]=0;for(const x of m.caps)nb[x]=0;nb[m.to]=m.crown?(p>0?2:-2):p;return nb}
+function perft(b,side,d){if(!d)return 1;let n=0;for(const m of genMoves(b,side))n+=perft(applyMove(b,m),-side,d-1);return n}
+
+// ---------- computer ----------
+function evaluate(b){
+ let s=0;
+ for(let i=0;i<64;i++){const p=b[i];if(!p)continue;const r=i>>3,c=i&7,k=Math.abs(p)===2;
+  let v=k?170:100;
+  if(!k){v+=(p>0?7-r:r)*4;if((p>0&&r===7)||(p<0&&r===0))v+=9}
+  else v+=(3.5-Math.abs(3.5-r))*2+(3.5-Math.abs(3.5-c))*2;
+  if(c===0||c===7)v-=3;
+  if(r>=2&&r<=5&&c>=2&&c<=5)v+=5;
+  s+=p>0?v:-v}
+ return s;
+}
+let nodes=0,deadline=0;const TIMEOUT={};
+function search(b,side,depth,alpha,beta){
+ if((++nodes&1023)===0&&performance.now()>deadline)throw TIMEOUT;
+ const moves=genMoves(b,side);
+ if(!moves.length)return -90000-depth;
+ if(depth<=0&&!moves[0].caps.length)return side*evaluate(b);
+ if(moves.length>1)moves.sort((a,c)=>c.caps.length-a.caps.length);
+ let best=-Infinity;
+ for(const m of moves){const v=-search(applyMove(b,m),-side,depth-1,-beta,-alpha);if(v>best)best=v;if(v>alpha)alpha=v;if(alpha>=beta)break}
+ return best;
+}
+function bestMove(b,side,lvl){
+ const moves=genMoves(b,side);if(moves.length===1)return moves[0];
+ const maxD=[2,6,14][lvl],ms=[150,500,1100][lvl];
+ deadline=performance.now()+ms;nodes=0;
+ let best=moves[0],scored=moves.map(m=>({m,v:0}));
+ for(let d=1;d<=maxD;d++){
+  try{
+   const cur=[];let alpha=-Infinity;
+   const order=scored.slice().sort((a,c)=>c.v-a.v);
+   for(const s of order){const v=-search(applyMove(b,s.m),-side,d-1,-Infinity,-alpha+1);cur.push({m:s.m,v});if(v>alpha)alpha=v}
+   scored=cur;best=cur.reduce((a,c)=>c.v>a.v?c:a).m;
+   if(Math.abs(alpha)>80000)break;
+  }catch(e){if(e!==TIMEOUT)throw e;break}
+ }
+ if(lvl===0){
+  if(Math.random()<.3)return moves[Math.floor(Math.random()*moves.length)];
+  const top=scored.slice().sort((a,c)=>c.v-a.v),ok=top.filter(s=>s.v>=top[0].v-60);
+  return ok[Math.floor(Math.random()*ok.length)].m;
+ }
+ return best;
+}
+
+// ---------- state ----------
+let board=initBoard(),turn=1,mode='cpu',level=LS.get('draughts_level',1),sel=null,prefix=[],legal=[],last=null,anim=null,hist=[],quiet=0,over=true,thinking=false,hint=null;
+const stats=LS.get('draughts_stats',{cpu:[{w:0,l:0,d:0},{w:0,l:0,d:0},{w:0,l:0,d:0}],p2:{r:0,b:0,d:0},streak:0,best:0});
+
+const cv=$('cv'),g=cv.getContext('2d');let S=0,Q=0;
+function fit(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);S=Math.round(r.width*d);cv.width=cv.height=S;Q=S/8}
+addEventListener('resize',fit);
+
+// ---------- audio ----------
+let AC=null;
+function snd(f,d=.08,type='triangle',v=.15){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*.6,t+d);gn.gain.setValueAtTime(v,t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn).connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+const sClack=()=>snd(260,.07,'square',.06),sCap=()=>{snd(520,.09);setTimeout(()=>snd(700,.09),70)},sKing=()=>[523,659,784,1046].forEach((f,i)=>setTimeout(()=>snd(f,.18,'triangle',.12),i*90));
+
+// ---------- drawing ----------
+const wood=[];for(let i=0;i<64;i++)wood.push(Math.random());
+function drawPiece(x,y,p,a=1,lift=0){
+ const R=Q*.38;g.save();g.globalAlpha=a;
+ g.fillStyle='#0008';g.beginPath();g.ellipse(x+R*.08,y+R*.18+lift*.4,R,R*.92,0,0,7);g.fill();
+ y-=lift;
+ const red=p>0,gr=g.createRadialGradient(x-R*.35,y-R*.4,R*.1,x,y,R*1.1);
+ if(red){gr.addColorStop(0,'#ff8a76');gr.addColorStop(.55,'#c0301f');gr.addColorStop(1,'#5e0f08')}
+ else{gr.addColorStop(0,'#8a8a8a');gr.addColorStop(.55,'#2e2e2e');gr.addColorStop(1,'#050505')}
+ g.fillStyle=gr;g.beginPath();g.arc(x,y,R,0,7);g.fill();
+ g.strokeStyle=red?'#ffffff40':'#ffffff26';g.lineWidth=R*.08;
+ for(const k of[.72,.5]){g.beginPath();g.arc(x,y,R*k,0,7);g.stroke()}
+ if(Math.abs(p)===2){
+  g.fillStyle='#f6cf5a';g.strokeStyle='#7a5410';g.lineWidth=R*.06;const w=R*.62,h=R*.42,bx=x-w/2,by=y-h*.35;
+  g.beginPath();g.moveTo(bx,by+h);g.lineTo(bx,by);g.lineTo(bx+w*.25,by+h*.45);g.lineTo(bx+w*.5,by-h*.15);g.lineTo(bx+w*.75,by+h*.45);g.lineTo(bx+w,by);g.lineTo(bx+w,by+h);g.closePath();g.fill();g.stroke();
+ }
+ g.restore();
+}
+function sqXY(i){return[(i&7)*Q+Q/2,(i>>3)*Q+Q/2]}
+function draw(t){
+ if(!S)fit();
+ for(let i=0;i<64;i++){const r=i>>3,c=i&7,dark=(r+c)%2;
+  const gr=g.createLinearGradient(c*Q,r*Q,c*Q+Q,r*Q+Q);
+  if(dark){gr.addColorStop(0,'#7d4c2a');gr.addColorStop(1,'#5e361c')}else{gr.addColorStop(0,'#ecd6a8');gr.addColorStop(1,'#d9bf8a')}
+  g.fillStyle=gr;g.fillRect(c*Q,r*Q,Q+1,Q+1);
+  g.strokeStyle=dark?'#ffffff08':'#00000010';g.lineWidth=1;
+  for(let k=0;k<3;k++){const yy=r*Q+Q*(.2+.3*k)+wood[i]*Q*.1;g.beginPath();g.moveTo(c*Q,yy);g.bezierCurveTo(c*Q+Q*.3,yy+Q*.05,c*Q+Q*.7,yy-Q*.05,c*Q+Q,yy);g.stroke()}
+ }
+ if(last){g.fillStyle='#ffe08a33';for(const i of[last.from,last.to]){g.fillRect((i&7)*Q,(i>>3)*Q,Q,Q)}}
+ const mine=!over&&!anim&&!thinking&&isHumanTurn();
+ if(mine&&legal.length&&legal[0].caps.length&&sel==null){
+  const pulse=.45+.35*Math.sin(t/180);g.strokeStyle=`rgba(255,180,60,${pulse})`;g.lineWidth=Q*.07;
+  for(const f of new Set(legal.map(m=>m.from))){const[x,y]=sqXY(f);g.beginPath();g.arc(x,y,Q*.45,0,7);g.stroke()}
+ }
+ if(hint){g.strokeStyle='#7fe0ff';g.lineWidth=Q*.06;g.setLineDash([Q*.12,Q*.08]);for(const i of[hint.from,hint.to]){g.strokeRect((i&7)*Q+3,(i>>3)*Q+3,Q-6,Q-6)}g.setLineDash([])}
+ const hidden=new Set();if(anim){hidden.add(anim.m.from)}
+ for(let i=0;i<64;i++){const p=board[i];if(!p||hidden.has(i))continue;
+  let a=1;if(anim&&anim.m.caps.includes(i)){const k=anim.capIdx(i);if(k>=0&&anim.seg>k)a=Math.max(0,1-(anim.seg-k));}
+  const[x,y]=sqXY(i);drawPiece(x,y,p,a,sel===i?Q*.08:0);
+ }
+ if(sel!=null&&mine){
+  const[x,y]=sqXY(sel);g.strokeStyle='#ffe08a';g.lineWidth=Q*.06;g.beginPath();g.arc(x,y-Q*.08,Q*.42,0,7);g.stroke();
+  for(const s of nextSteps()){const[tx,ty]=sqXY(s);g.fillStyle='#ffe08acc';g.beginPath();g.arc(tx,ty,Q*.13,0,7);g.fill();g.strokeStyle='#7a5410';g.lineWidth=2;g.stroke()}
+ }
+ if(anim){const[x,y]=anim.pos();drawPiece(x,y,anim.piece,1,Q*.12)}
+}
+function loop(t){if(anim)anim.tick(t);draw(t);requestAnimationFrame(loop)}
+
+// ---------- flow ----------
+const isHumanTurn=()=>mode==='2p'||turn===1;
+function countSide(s){let n=0;for(const p of board)if(p&&Math.sign(p)===s)n++;return n}
+function setMsg(t,warn){$('msg').textContent=t;$('msg').className=warn?'warn':''}
+function updHud(){
+ $('cTop').textContent=countSide(-1);$('cBot').textContent=countSide(1);
+ $('sTop').classList.toggle('on',!over&&turn===-1);$('sBot').classList.toggle('on',!over&&turn===1);
+ $('nTop').textContent=mode==='cpu'?`Computer · ${LV[level]}`:'Black';$('nBot').textContent=mode==='cpu'?'You':'Red';
+ $('undoB').disabled=over||thinking||!hist.length;$('hintB').disabled=over||thinking||!isHumanTurn();
+}
+function startTurn(){
+ legal=genMoves(board,turn);sel=null;prefix=[];hint=null;
+ if(!legal.length){return endGame(-turn)}
+ if(quiet>=80)return endGame(0);
+ updHud();
+ const who=mode==='cpu'?(turn===1?'Your move':'Computer is thinking…'):(turn===1?'Red to move':'Black to move');
+ setMsg(legal[0].caps.length&&isHumanTurn()?(legal[0].caps.length>1||legal.some(m=>m.caps.length>1)?'Capture is compulsory — take the lot!':'Capture is compulsory!'):who,legal[0].caps.length&&isHumanTurn());
+ if(!isHumanTurn()){thinking=true;updHud();setTimeout(()=>{const m=bestMove(board,turn,level);thinking=false;play(m)},380)}
+}
+function play(m){
+ if(isHumanTurn()||mode==='2p')hist.push({board:board.slice(),turn,quiet,last});
+ const piece=board[m.from],segT=170,start=performance.now();
+ anim={m,piece:m.crown?piece:piece,seg:0,
+  capIdx(i){return m.caps.indexOf(i)},
+  pos(){const k=Math.min(this.seg,m.path.length-1-1e-9),i=Math.floor(k),f=k-i,[x1,y1]=sqXY(m.path[i]),[x2,y2]=sqXY(m.path[Math.min(i+1,m.path.length-1)]);const e=f<.5?2*f*f:1-2*(1-f)*(1-f);return[x1+(x2-x1)*e,y1+(y2-y1)*e-Math.sin(f*Math.PI)*Q*(m.caps.length?.35:.12)]},
+  tick(t){const ns=(t-start)/segT;if(Math.floor(ns)>Math.floor(this.seg)&&ns<m.path.length-1+1){m.caps.length?sCap():sClack()}this.seg=ns;if(ns>=m.path.length-1){finish()}}};
+ sel=null;prefix=[];hint=null;
+ function finish(){
+  anim=null;board=applyMove(board,m);last=m;
+  quiet=(m.caps.length||Math.abs(piece)===1)?0:quiet+1;
+  if(!m.caps.length)sClack();
+  if(m.crown)sKing();
+  if(m.caps.length>=2)setMsg(m.caps.length>=3?'Triple! Absolute carnage.':'Double jump!');
+  turn=-turn;startTurn();
+ }
+}
+function nextSteps(){
+ const out=new Set();
+ for(const m of legal)if(m.from===sel&&prefix.every((s,k)=>m.path[k+1]===s)&&m.path.length>prefix.length+1)out.add(m.path[prefix.length+1]);
+ return out;
+}
+cv.addEventListener('pointerdown',e=>{
+ if(over||anim||thinking||!isHumanTurn())return;
+ const r=cv.getBoundingClientRect(),c=Math.floor((e.clientX-r.left)/r.width*8),rr=Math.floor((e.clientY-r.top)/r.height*8);
+ if(c<0||c>7||rr<0||rr>7)return;
+ const i=rr*8+c;
+ if(sel!=null&&nextSteps().has(i)){
+  prefix.push(i);
+  const cand=legal.filter(m=>m.from===sel&&prefix.every((s,k)=>m.path[k+1]===s));
+  const done=cand.filter(m=>m.path.length===prefix.length+1);
+  if(done.length&&cand.length===done.length){play(done[0]);return}
+  if(cand.length===1&&cand[0].path.length>prefix.length+1){play(cand[0]);return}
+  snd(400,.05);return;
+ }
+ if(board[i]&&Math.sign(board[i])===turn){
+  if(legal.some(m=>m.from===i)){sel=i;prefix=[];snd(330,.04);hint=null}
+  else{sel=null;prefix=[];setMsg(legal[0].caps.length?'That piece can\'t move — you must capture!':'That piece is stuck.',true)}
+  return;
+ }
+ sel=null;prefix=[];
+});
+function endGame(winner){
+ over=true;updHud();
+ let t,s;
+ if(mode==='cpu'){
+  const st=stats.cpu[level];
+  if(winner===1){st.w++;stats.streak++;stats.best=Math.max(stats.best,stats.streak);t='You win! 🏆';s=[`Beat the computer on ${LV[level]}.`,`Win streak: ${stats.streak}`].join(' ')}
+  else if(winner===-1){st.l++;stats.streak=0;t='Computer wins';s=pickQ(['It says "good game". It doesn\'t mean it.','Back to the drawing board. Or the draughts board.','Even kings fall. Mostly yours, just then.'])}
+  else{st.d++;t='Draw';s='Forty moves each and nobody blinked.'}
+ }else{
+  if(winner===1){stats.p2.r++;t='Red wins!'}else if(winner===-1){stats.p2.b++;t='Black wins!'}else{stats.p2.d++;t='Draw'}
+  s=`Red ${stats.p2.r} · Black ${stats.p2.b} · Draws ${stats.p2.d}`;
+ }
+ LS.set('draughts_stats',stats);
+ if(winner)setMsg(t);
+ setTimeout(()=>{$('resT').textContent=t;$('resS').textContent=s;$('over').classList.remove('hide')},700);
+ winner===1||mode==='2p'?sKing():snd(180,.4,'sawtooth',.08);
+}
+const pickQ=a=>a[Math.floor(Math.random()*a.length)];
+function newGame(m){mode=m;board=initBoard();turn=1;hist=[];last=null;quiet=0;over=false;thinking=false;anim=null;
+ $('menu').classList.add('hide');$('over').classList.add('hide');fit();startTurn()}
+$('undoB').onclick=()=>{
+ if(over||thinking||anim||!hist.length)return;
+ let h=hist.pop();
+ if(mode==='cpu'&&h.turn===-1&&hist.length)h=hist.pop();
+ if(mode==='cpu'&&h.turn!==1)return;
+ board=h.board;turn=h.turn;quiet=h.quiet;last=h.last;snd(300,.06);startTurn();
+};
+$('hintB').onclick=()=>{if(over||thinking||!isHumanTurn())return;const m=bestMove(board,turn,Math.max(1,level));hint=m;sel=null;prefix=[];setMsg('Try that one 👀')};
+$('menuB').onclick=()=>{renderStats();$('menu').classList.remove('hide')};
+$('playCpu').onclick=()=>newGame('cpu');$('play2').onclick=()=>newGame('2p');
+$('againB').onclick=()=>newGame(mode);$('toMenu').onclick=()=>{$('over').classList.add('hide');renderStats();$('menu').classList.remove('hide')};
+document.querySelectorAll('.lv').forEach(b=>b.onclick=()=>{level=+b.dataset.l;LS.set('draughts_level',level);markLv()});
+function markLv(){document.querySelectorAll('.lv').forEach(b=>b.classList.toggle('on',+b.dataset.l===level))}
+function renderStats(){
+ const r=stats.cpu.map((s,i)=>`<tr><td>${LV[i]}</td><td>${s.w}</td><td>${s.l}</td><td>${s.d}</td></tr>`).join('');
+ $('stats').innerHTML=`<tr><th>vs Computer</th><th>Won</th><th>Lost</th><th>Drawn</th></tr>${r}<tr><td colspan="4" style="opacity:.75">Best win streak: ${stats.best} · 2-player: Red ${stats.p2.r} – Black ${stats.p2.b}</td></tr>`;
+}
+addEventListener('keydown',e=>{if(e.key==='u'||e.key==='U')$('undoB').click();if(e.key==='Escape')$('menuB').click()});
+window.__draughts={initBoard,genMoves,applyMove,perft,bestMove};
+markLv();renderStats();fit();updHud();requestAnimationFrame(loop);
+</script>
+</body>
+</html>

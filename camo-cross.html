@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Camo Cross</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#151a12 radial-gradient(90% 70% at 50% 0%,#2f3a24,#10140c);color:#eee6cf;font-family:"Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+.scr{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:14px;overflow:auto}
+.scr.hide{display:none}
+h1{font-family:Impact,"Arial Black",sans-serif;font-size:clamp(34px,9vw,56px);letter-spacing:2px;margin-top:2vh;background:repeating-linear-gradient(115deg,#7a8a4a 0 14px,#4a5a2a 14px 26px,#a49a62 26px 36px,#2d3a1c 36px 48px);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #000)}
+.sub{opacity:.75;font-size:14px;margin:2px 0 14px;text-align:center}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+.tab{font:700 14px "Segoe UI",system-ui,sans-serif;padding:8px 14px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff10;color:#eee6cf;cursor:pointer}
+.tab.on{background:#c9b86a;color:#1d1a08;border-color:#c9b86a}
+#levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;width:min(640px,94vw)}
+.lvl{aspect-ratio:1;border-radius:12px;background:#ffffff0d;border:2px solid #ffffff1c;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;gap:4px;font-weight:700;font-size:13px}
+.lvl:hover{border-color:#c9b86a}
+.lvl canvas{width:56%;image-rendering:pixelated;border-radius:3px}
+.lvl .q{font-size:30px;opacity:.5}
+.lvl small{font-size:11px;opacity:.65;font-weight:600}
+.lvl.done{border-color:#7ab85a55}
+#game{gap:8px}
+#top{display:flex;align-items:center;gap:8px;width:min(640px,96vw)}
+#top .t{flex:1;font-weight:800;font-size:16px}
+.chip{background:#0005;border:1px solid #ffffff1c;border-radius:9px;padding:5px 10px;font-weight:700;font-size:13px}
+button{font:700 14px "Segoe UI",system-ui,sans-serif;padding:8px 12px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff14;color:#eee6cf;cursor:pointer}
+button:hover{background:#ffffff26}
+#wrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0}
+#pz{display:grid;touch-action:none}
+.cl{display:flex;align-items:flex-end;justify-content:center;font-weight:700;color:#d9cfa8;font-variant-numeric:tabular-nums}
+.cl.col{flex-direction:column;justify-content:flex-end;align-items:center;line-height:1.15;padding-bottom:3px}
+.cl.row{align-items:center;justify-content:flex-end;gap:.45em;padding-right:6px}
+.cl.ok{color:#6a7a4a}
+.cl.hl{background:#ffffff10}
+.c{background:#e9e2c8;border:1px solid #9a9378;cursor:pointer;position:relative}
+.c.f{background:#2f3a1e;border-color:#2f3a1e}
+.c.x::after{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#a0442f;font-weight:900}
+.c.b5r{border-right:2px solid #4a4530}.c.b5b{border-bottom:2px solid #4a4530}
+.c.hl{filter:brightness(.92)}
+#tools{display:flex;gap:8px;align-items:center}
+#modeB.x{background:#a0442f;border-color:#a0442f}
+.ov{position:fixed;inset:0;background:#0b0e08d9;display:flex;align-items:center;justify-content:center;z-index:5}
+.ov.hide{display:none}
+.card{background:linear-gradient(#2f3a22,#161c0e);border:2px solid #5d6b3a;border-radius:18px;padding:22px;text-align:center;width:min(380px,92vw);box-shadow:0 30px 70px #000}
+.card h2{font-family:Impact,"Arial Black",sans-serif;font-size:32px;color:#e3d48a;letter-spacing:1px}
+.card canvas{width:140px;image-rendering:pixelated;margin:12px auto;display:block;border-radius:6px;box-shadow:0 6px 20px #0008}
+.card p{opacity:.85;font-size:14px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="scr" id="menu">
+ <h1>CAMO CROSS</h1>
+ <div class="sub">Fill the squares to match the number clues and reveal the hidden picture.<br>"3 1" means a run of 3, a gap, then 1.</div>
+ <div class="tabs" id="tabs"></div>
+ <div id="levels"></div>
+</div>
+<div class="scr hide" id="game">
+ <div id="top"><button id="backB">◀</button><div class="t" id="pzName"></div><div class="chip" id="timer">0:00</div><div class="chip">💡 <span id="hints">3</span></div></div>
+ <div id="wrap"><div id="pz"></div></div>
+ <div id="tools"><button id="modeB">■ Fill</button><button id="hintB">💡 Hint</button><button id="clearB">↺ Clear</button></div>
+</div>
+<div class="ov hide" id="win"><div class="card"><h2>PICTURE REVEALED</h2><canvas id="winPic"></canvas><p id="winTxt"></p><button id="nextB">Next puzzle ▶</button> <button id="winMenu">Menu</button></div></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const P=(name,col,rows)=>({name,col,rows});
+const PACKS=[
+ {name:'Recruit 5×5',list:[
+  P('Heart','#c73a3a',['.#.#.','#####','#####','.###.','..#..']),
+  P('Tree','#3f7a2a',['..#..','.###.','#####','..#..','..#..']),
+  P('Helmet','#5a6a3a',['.###.','#####','#####','#...#','.....']),
+  P('Boot','#4a3220',['.##..','.##..','.##..','.####','#####']),
+  P('Dumbbell','#6a6a72',['.....','#...#','#####','#...#','.....']),
+  P('Arrow','#c9a03a',['..#..','.###.','#.#.#','..#..','..#..']),
+  P('House','#a5533a',['..#..','.###.','#####','.#.#.','.###.']),
+  P('Star','#e0b830',['..#..','.###.','#####','.###.','.#.#.'])]},
+ {name:'Squaddie 8×8',list:[
+  P('Tank','#5a6a3a',['........','....####','..####..','.######.','########','#.#.#.#.','.######.','........']),
+  P('Kettlebell','#3a3a40',['..####..','.#....#.','.#....#.','..####..','.######.','########','########','.######.']),
+  P('Beret','#7a1e2e',['........','...##...','.######.','########','########','#######.','.#####..','........']),
+  P('Medal','#d0a020',['##....##','.##..##.','..####..','...##...','..####..','.######.','.######.','..####..']),
+  P('Sheep','#bdb7a2',['..####..','.######.','########','#.######','########','.######.','.#.##.#.','.#.##.#.']),
+  P('Rain','#4a7aa8',['..###...','.#####..','########','########','........','.#..#..#','#..#..#.','........']),
+  P('Tent','#6a7a3a',['...##...','..####..','..#..#..','.##..##.','.#....#.','##....##','#......#','########']),
+  P('Compass','#a8742a',['..####..','.#....#.','#...#..#','#..##..#','#..#...#','#......#','.#....#.','..####..'])]},
+ {name:'Sergeant 10×10',list:[
+  P('Brew','#8a5a30',['..#..#....','.#..#.....','..#..#....','..........','#######...','#######.##','#######..#','#######.##','.#####....','..###.....']),
+  P('Trainer','#3a6ab0',['..........','..........','...###....','..#####...','..######..','.#########','##########','##########','#.#.#.#.#.','..........']),
+  P('Anchor','#2a4a7a',['....##....','...#..#...','....##....','..######..','....##....','....##....','#...##...#','##..##..##','.########.','...####...']),
+  P('Rocket','#b03a3a',['....##....','...####...','...####...','..##..##..','..##..##..','..######..','..######..','.########.','##.####.##','#..#..#..#']),
+  P('Cat','#5a5048',['#........#','##......##','###....###','##########','#.##..##.#','##########','####..####','.###..###.','..######..','....##....']),
+  P('Dog Tags','#8a8a90',['...#......','..#.#.....','..#..#....','.######...','.#....#...','.#.##.####','.#....#..#','.######.##','......#..#','......####']),
+  P('Moon','#d8c86a',['...####...','..##......','.##.......','##.....#..','##....###.','##.....#..','##........','.##.......','..##......','...####...'])]},
+ {name:'Endless',endless:true,list:[]}
+];
+let pack=LS.get('camo_pack',0),solved=LS.get('camo_solved',{}),hints=LS.get('camo_hints',3),endlessN=LS.get('camo_endless',0);
+function rng(seed){let s=seed>>>0;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function endlessPuzzle(n){
+ const sz=n<5?8:n<15?10:12,r=rng(9001+n*7919),rows=[];
+ for(let y=0;y<sz;y++){let s='';for(let x=0;x<sz;x++)s+=r()<.58?'#':'.';if(!s.includes('#'))s='#'+s.slice(1);rows.push(s)}
+ const cols=['#3f7a2a','#8a5a30','#2a4a7a','#7a1e2e','#5a6a3a','#a8742a'];
+ return P(`Endless #${n+1}`,cols[n%cols.length],rows);
+}
+const key=(pi,li)=>pi+':'+li;
+function thumb(cv,pz,show){const n=pz.rows.length;cv.width=cv.height=n;const g=cv.getContext('2d');g.fillStyle=show?'#e9e2c8':'#ffffff10';g.fillRect(0,0,n,n);if(!show)return;g.fillStyle=pz.col;pz.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch==='#')g.fillRect(x,y,1,1)}))}
+function renderMenu(){
+ $('tabs').innerHTML='';PACKS.forEach((p,i)=>{const b=document.createElement('button');b.className='tab'+(i===pack?' on':'');const done=p.endless?endlessN:p.list.filter((_,j)=>solved[key(i,j)]).length;b.textContent=`${p.name} · ${p.endless?done+' solved':done+'/'+p.list.length}`;b.onclick=()=>{pack=i;LS.set('camo_pack',i);renderMenu()};$('tabs').appendChild(b)});
+ const L=$('levels');L.innerHTML='';
+ if(PACKS[pack].endless){const d=document.createElement('div');d.className='lvl';d.innerHTML=`<div class="q">∞</div>Puzzle ${endlessN+1}<small>new grid every time</small>`;d.onclick=()=>start(pack,endlessN);L.appendChild(d);return}
+ PACKS[pack].list.forEach((pz,j)=>{const d=document.createElement('div'),s=solved[key(pack,j)];d.className='lvl'+(s?' done':'');
+  if(s){const c=document.createElement('canvas');thumb(c,pz,true);d.appendChild(c);d.insertAdjacentHTML('beforeend',`${pz.name}<small>best ${fmt(s)}</small>`)}
+  else d.innerHTML=`<div class="q">?</div>Puzzle ${j+1}<small>${pz.rows.length}×${pz.rows.length}</small>`;
+  d.onclick=()=>start(pack,j);L.appendChild(d)});
+}
+const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function runs(arr){const o=[];let n=0;for(const v of arr){if(v)n++;else if(n){o.push(n);n=0}}if(n)o.push(n);return o.length?o:[0]}
+
+let cur=null,cells=[],state=[],N=0,rowCl=[],colCl=[],t0=0,tick=null,fillMode=true,drag=null,done=false;
+function start(pi,li){
+ const pz=PACKS[pi].endless?endlessPuzzle(li):PACKS[pi].list[li];
+ cur={pi,li,pz};N=pz.rows.length;done=false;
+ const sol=pz.rows.map(r=>[...r].map(ch=>ch==='#'?1:0));cur.sol=sol;
+ rowCl=sol.map(runs);colCl=[...Array(N)].map((_,x)=>runs(sol.map(r=>r[x])));
+ state=[...Array(N)].map(()=>Array(N).fill(0));
+ $('pzName').textContent=PACKS[pi].endless?pz.name:`Puzzle ${li+1} · ${N}×${N}`;
+ build();$('menu').classList.add('hide');$('game').classList.remove('hide');
+ t0=Date.now();clearInterval(tick);tick=setInterval(()=>{if(!done)$('timer').textContent=fmt(Math.floor((Date.now()-t0)/1000))},500);$('timer').textContent='0:00';
+ $('hints').textContent=hints;
+}
+function build(){
+ const pz=$('pz');pz.innerHTML='';
+ const maxR=Math.max(...rowCl.map(c=>c.length)),maxC=Math.max(...colCl.map(c=>c.length));
+ const W=Math.min(innerWidth*.96,640),H=innerHeight-150;
+ const cs=Math.floor(Math.min((W)/(N+maxR*.62),(H)/(N+maxC*.62)));
+ const fs=Math.max(10,Math.floor(cs*.42));
+ pz.style.gridTemplateColumns=`${Math.ceil(maxR*fs*.95+10)}px repeat(${N},${cs}px)`;pz.style.gridTemplateRows=`${Math.ceil(maxC*fs*1.2+6)}px repeat(${N},${cs}px)`;pz.style.fontSize=fs+'px';
+ pz.appendChild(document.createElement('div'));
+ colCl.forEach((c,x)=>{const d=document.createElement('div');d.className='cl col';d.id='cc'+x;d.innerHTML=c.map(v=>`<span>${v}</span>`).join('');pz.appendChild(d)});
+ cells=[];
+ for(let y=0;y<N;y++){
+  const d=document.createElement('div');d.className='cl row';d.id='rc'+y;d.innerHTML=rowCl[y].map(v=>`<span>${v}</span>`).join('');pz.appendChild(d);
+  cells.push([]);
+  for(let x=0;x<N;x++){const c=document.createElement('div');c.className='c'+((x+1)%5===0&&x<N-1?' b5r':'')+((y+1)%5===0&&y<N-1?' b5b':'');c.dataset.x=x;c.dataset.y=y;pz.appendChild(c);cells[y].push(c)}
+ }
+ paintAll();
+}
+function paintCell(x,y){const c=cells[y][x],v=state[y][x];c.classList.toggle('f',v===1);c.classList.toggle('x',v===2)}
+function paintAll(){for(let y=0;y<N;y++)for(let x=0;x<N;x++)paintCell(x,y);checkClues()}
+function checkClues(){
+ for(let y=0;y<N;y++)$('rc'+y).classList.toggle('ok',runs(state[y].map(v=>v===1?1:0)).join()===rowCl[y].join());
+ for(let x=0;x<N;x++)$('cc'+x).classList.toggle('ok',runs(state.map(r=>r[x]===1?1:0)).join()===colCl[x].join());
+}
+function hl(x,y){document.querySelectorAll('.hl').forEach(e=>e.classList.remove('hl'));if(x==null)return;$('rc'+y).classList.add('hl');$('cc'+x).classList.add('hl');for(let i=0;i<N;i++){cells[y][i].classList.add('hl');cells[i][x].classList.add('hl')}}
+function cellAt(e){const el=document.elementFromPoint(e.clientX,e.clientY);return el&&el.classList.contains('c')?el:null}
+$('pz').addEventListener('pointerdown',e=>{
+ const el=cellAt(e);if(!el||done)return;e.preventDefault();
+ const x=+el.dataset.x,y=+el.dataset.y,want=(e.button===2||!fillMode)?2:1,v=state[y][x];
+ drag={to:v===want?0:want,x0:x,y0:y,axis:null};apply(x,y);
+});
+addEventListener('pointermove',e=>{if(!drag)return;const el=cellAt(e);if(!el)return;let x=+el.dataset.x,y=+el.dataset.y;
+ if(!drag.axis&&(x!==drag.x0||y!==drag.y0))drag.axis=x!==drag.x0?'h':'v';if(drag.axis==='h')y=drag.y0;else if(drag.axis==='v')x=drag.x0;apply(x,y)});
+addEventListener('pointerup',()=>{drag=null});
+$('pz').addEventListener('contextmenu',e=>e.preventDefault());
+$('pz').addEventListener('mouseover',e=>{const el=e.target.closest('.c');if(el)hl(+el.dataset.x,+el.dataset.y)});
+$('pz').addEventListener('mouseleave',()=>hl());
+function apply(x,y){if(state[y][x]===drag.to)return;state[y][x]=drag.to;paintCell(x,y);tone(drag.to===1?520:drag.to===2?300:240,.04);checkClues();checkWin()}
+function checkWin(){
+ for(let y=0;y<N;y++)if(runs(state[y].map(v=>v===1?1:0)).join()!==rowCl[y].join())return;
+ for(let x=0;x<N;x++)if(runs(state.map(r=>r[x]===1?1:0)).join()!==colCl[x].join())return;
+ done=true;const secs=Math.floor((Date.now()-t0)/1000);
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){const c=cells[y][x];setTimeout(()=>{c.style.transition='background .3s';c.style.background=state[y][x]===1?cur.pz.col:'#e9e2c8';c.classList.remove('x')},(x+y)*35)}
+ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.2),i*110));
+ const k=key(cur.pi,cur.li);let msg=`Solved in ${fmt(secs)}.`;
+ if(PACKS[cur.pi].endless){endlessN=Math.max(endlessN,cur.li+1);LS.set('camo_endless',endlessN);if(endlessN%3===0){hints++;msg+=' +1 hint 💡'}}
+ else{const prev=solved[k];if(!prev||secs<prev){solved[k]=secs;msg+=prev?' New best time!':''}if(!prev){hints++;msg+=' +1 hint 💡'}LS.set('camo_solved',solved)}
+ LS.set('camo_hints',hints);$('hints').textContent=hints;
+ setTimeout(()=>{thumb($('winPic'),cur.pz,true);$('winTxt').textContent=`${cur.pz.name}! ${msg}`;$('win').classList.remove('hide')},N*70+400);
+}
+$('modeB').onclick=()=>{fillMode=!fillMode;$('modeB').textContent=fillMode?'■ Fill':'✕ Mark';$('modeB').classList.toggle('x',!fillMode)};
+$('clearB').onclick=()=>{if(done)return;state=state.map(r=>r.map(()=>0));paintAll()};
+$('hintB').onclick=()=>{if(done||hints<=0)return;const wrong=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++){const want=cur.sol[y][x];if((want&&state[y][x]!==1)||(!want&&state[y][x]===1))wrong.push([x,y])}
+ if(!wrong.length)return;const[x,y]=wrong[Math.floor(Math.random()*wrong.length)];hints--;LS.set('camo_hints',hints);$('hints').textContent=hints;state[y][x]=cur.sol[y][x]?1:2;paintCell(x,y);cells[y][x].animate([{outline:'3px solid #ffd84a'},{outline:'0 solid transparent'}],{duration:900});checkClues();checkWin()};
+$('backB').onclick=()=>{clearInterval(tick);$('game').classList.add('hide');$('menu').classList.remove('hide');renderMenu()};
+$('winMenu').onclick=()=>{$('win').classList.add('hide');$('backB').click()};
+$('nextB').onclick=()=>{$('win').classList.add('hide');const p=PACKS[cur.pi];if(p.endless)return start(cur.pi,cur.li+1);
+ let j=p.list.findIndex((_,i)=>i>cur.li&&!solved[key(cur.pi,i)]);if(j<0)j=p.list.findIndex((_,i)=>!solved[key(cur.pi,i)]);
+ if(j<0){const np=Math.min(cur.pi+1,PACKS.length-1);pack=np;LS.set('camo_pack',np);return PACKS[np].endless?start(np,endlessN):start(np,0)}start(cur.pi,j)};
+addEventListener('resize',()=>{if(!$('game').classList.contains('hide'))build()});
+addEventListener('keydown',e=>{if(e.code==='KeyX'||e.code==='Space'){e.preventDefault();$('modeB').click()}});
+let AC=null;function tone(f,d=.08,v=.08){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+renderMenu();
+</script>
+</body>
+</html>

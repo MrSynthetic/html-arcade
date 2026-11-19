@@ -27,13 +27,21 @@
   th{background:#ffffff18;font-size:11px;letter-spacing:1px}
   .eagle{background:#ffd23f;color:#3a2a00}.birdie{background:#4ade80;color:#05300f}.bogey{background:#f87171aa}.par{background:#ffffff22}
   #banner{position:fixed;top:30%;left:0;right:0;text-align:center;font-size:clamp(36px,9vw,80px);font-weight:900;font-style:italic;pointer-events:none;opacity:0;text-shadow:0 6px 0 #0006}
+  #courses{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;width:min(560px,92vw)}
+  .course{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;border:2px solid #ffffff2a;background:#ffffff14;color:#fff;font-family:inherit;cursor:pointer;text-align:left}
+  .course:hover{background:#ffffff24;border-color:#ffd23f}
+  .course.locked{opacity:.5}
+  .course .ci{font-size:30px}
+  .course .cn{font-weight:900;font-size:16px;line-height:1.2}
+  .course .cn small{display:block;font-weight:600;font-size:12px;opacity:.75;margin-top:2px}
+  #cardTable table{margin:4px 0}
   #tip{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);font-size:13px;opacity:.7;pointer-events:none;text-align:center}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="hud" class="hidden">
-  <div class="chip"><small>HOLE</small><span id="hHole">1</span>/9</div>
+  <div class="chip"><small>HOLE</small><span id="hHole">1</span>/<span id="hN">9</span></div>
   <div class="chip"><small>PAR</small><span id="hPar">3</span></div>
   <div class="chip"><small>STROKES</small><span id="hStr">0</span></div>
   <div class="chip"><small>TOTAL</small><span id="hTot">E</span></div>
@@ -48,16 +56,16 @@
 
 <div id="title" class="ov">
   <h1>Sling<span>Golf</span></h1>
-  <p>Nine hand-built holes of bouncy, slidy, portal-hopping mini golf. Pull back, aim, and let it fly.</p>
+  <p>Thirty-six hand-built holes of bouncy, slidy, portal-hopping mini golf across four courses. Pull back, aim, and let it fly.</p>
   <p style="font-size:14px">🟫 Sand slows · 🧊 Ice slides · 💧 Water = +1 · 🟣 Portals teleport · 🔶 Bumpers boost · ➡️ Conveyors push · 🌀 Windmills block</p>
-  <button class="btn" id="playBtn">TEE OFF</button>
+  <div id="courses"></div>
   <p id="best" style="font-size:14px;opacity:.6"></p>
 </div>
 <div id="card" class="ov hidden">
   <h2 id="cardTitle">Scorecard</h2>
   <div id="cardTable"></div>
   <p id="cardMsg"></p>
-  <div style="display:flex;gap:12px"><button class="btn alt" id="cardClose">Continue</button><button class="btn hidden" id="cardAgain">Play Again</button></div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center"><button class="btn alt" id="cardClose">Continue</button><button class="btn hidden" id="cardAgain">Play Again</button><button class="btn alt hidden" id="cardMenu">Courses</button></div>
 </div>
 
 <script>
@@ -90,7 +98,7 @@ const sfx={
 */
 function box(x,y,w,h){return[[x,y,x+w,y],[x+w,y,x+w,y+h],[x+w,y+h,x,y+h],[x,y+h,x,y]];}
 function polyWalls(pts){const r=[];for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];r.push([a[0],a[1],b[0],b[1]]);}return r;}
-const HOLES=[
+const COURSE1=[
  {name:'First Swing',par:2,tee:[150,320],cup:[850,320],green:polyWalls([[80,220],[920,220],[920,420],[80,420]]),walls:[],zones:[],bumpers:[],portals:[],movers:[]},
  {name:'The Dogleg',par:3,tee:[150,520],cup:[820,140],
   green:polyWalls([[80,440],[620,440],[620,60],[920,60],[920,240],[760,240],[760,600],[80,600]]),
@@ -114,18 +122,101 @@ const HOLES=[
   zones:[{t:'water',r:[40,40,200,160]},{t:'ice',r:[700,40,260,580]},{t:'sand',r:[240,500,300,120]}],
   bumpers:[{x:850,y:130,r:26},{x:850,y:520,r:26},{x:500,y:110,r:22}],portals:[{a:[150,330],b:[830,330]}],movers:[{type:'mill',x:500,y:480,len:58,spd:1.3}]},
 ];
+const R4=(x,y,w,h)=>polyWalls([[x,y],[x+w,y],[x+w,y+h],[x,y+h]]);
+const HL=(o)=>Object.assign({walls:[],zones:[],bumpers:[],portals:[],movers:[]},o);
+const COURSE2=[ // Seaside Scramble
+ HL({name:'Beach Day',par:2,tee:[150,320],cup:[850,320],green:R4(80,200,840,240),zones:[{t:'sand',r:[380,200,90,110]},{t:'sand',r:[560,330,90,110]}]}),
+ HL({name:'Tide Pools',par:3,tee:[130,480],cup:[870,160],green:R4(60,80,880,480),zones:[{t:'water',r:[300,80,120,250]},{t:'water',r:[580,310,120,250]}]}),
+ HL({name:'The Pier',par:3,tee:[120,320],cup:[880,320],green:R4(60,250,880,140),zones:[{t:'water',r:[300,250,130,40]},{t:'water',r:[600,350,130,40]}],bumpers:[{x:500,y:320,r:18}]}),
+ HL({name:'Sandcastle',par:3,tee:[120,320],cup:[500,320],green:R4(60,60,880,520),
+   walls:[[400,200,600,200],[400,200,400,440],[400,440,600,440],[600,200,600,280],[600,360,600,440]],
+   zones:[{t:'sand',r:[330,120,340,70]},{t:'sand',r:[330,450,340,70]}]}),
+ HL({name:'Lighthouse',par:3,tee:[130,520],cup:[820,170],green:R4(60,60,880,520),
+   zones:[{t:'water',r:[60,60,190,150]},{t:'water',r:[680,470,260,110]}],bumpers:[{x:720,y:270,r:26},{x:890,y:300,r:22},{x:470,y:330,r:24}]}),
+ HL({name:'Shipwreck',par:3,tee:[150,140],cup:[820,140],green:R4(60,60,880,520),
+   walls:[[300,60,300,420],[620,220,620,580]],zones:[{t:'water',r:[320,60,160,120]},{t:'sand',r:[640,420,160,160]}]}),
+ HL({name:'Crab Walk',par:3,tee:[120,320],cup:[880,320],green:R4(60,180,880,280),
+   zones:[{t:'conv',r:[290,180,160,280],dir:[0,240]},{t:'conv',r:[560,180,160,280],dir:[0,-240]}]}),
+ HL({name:'Message in a Bottle',par:3,tee:[120,140],cup:[860,500],green:R4(60,60,880,520),
+   walls:[[480,60,480,580]],zones:[{t:'water',r:[200,250,150,150]}],portals:[{a:[400,500],b:[600,140]}]}),
+ HL({name:'The Kraken',par:4,tee:[110,320],cup:[890,320],green:R4(60,140,880,360),
+   zones:[{t:'water',r:[60,140,150,70]},{t:'water',r:[790,430,150,70]}],
+   movers:[{type:'mill',x:380,y:320,len:105,spd:1.4},{type:'mill',x:640,y:320,len:105,spd:-1.8}]}),
+];
+const COURSE3=[ // Funhouse Frenzy
+ HL({name:'Ping!',par:2,tee:[150,320],cup:[850,320],green:R4(80,200,840,240),bumpers:[{x:500,y:255,r:24},{x:500,y:385,r:24}]}),
+ HL({name:'Hall of Mirrors',par:3,tee:[160,140],cup:[840,500],green:R4(60,60,880,520),
+   walls:[[360,60,360,580],[640,60,640,580]],portals:[{a:[260,500],b:[460,140]},{a:[540,500],b:[740,140]}]}),
+ HL({name:'Spin Cycle',par:3,tee:[110,320],cup:[890,320],green:R4(60,200,880,240),
+   movers:[{type:'mill',x:300,y:320,len:82,spd:2},{type:'mill',x:500,y:320,len:82,spd:-2.2},{type:'mill',x:700,y:320,len:82,spd:2.5}]}),
+ HL({name:'Bumper Cars',par:3,tee:[110,320],cup:[880,320],green:R4(60,60,880,520),
+   bumpers:[{x:300,y:180,r:26},{x:300,y:460,r:26},{x:480,y:320,r:30},{x:660,y:180,r:26},{x:660,y:460,r:26},{x:800,y:320,r:22}]}),
+ HL({name:'Lift Shaft',par:3,tee:[140,320],cup:[860,320],green:R4(60,120,880,400),
+   walls:[[400,120,400,260],[400,380,400,520],[700,120,700,230],[700,410,700,520]],zones:[{t:'conv',r:[420,120,260,400],dir:[0,170]}],
+   movers:[{type:'slide',x:400,y1:180,y2:460,h:110,spd:1.2},{type:'slide',x:700,y1:180,y2:460,h:110,spd:-1.6}]}),
+ HL({name:'Snail Shell',par:4,tee:[120,520],cup:[470,370],green:R4(60,60,880,520),
+   walls:[[200,160,800,160],[800,160,800,480],[800,480,300,480],[300,480,300,260],[300,260,640,260],[640,260,640,380]]}),
+ HL({name:'Pachinko',par:3,tee:[500,100],cup:[500,560],green:R4(260,60,480,540),
+   bumpers:[{x:340,y:210,r:16},{x:500,y:210,r:16},{x:660,y:210,r:16},{x:420,y:300,r:16},{x:580,y:300,r:16},{x:340,y:390,r:16},{x:500,y:390,r:16},{x:660,y:390,r:16},{x:420,y:475,r:16},{x:580,y:475,r:16}]}),
+ HL({name:'Prank Portal',par:3,tee:[150,320],cup:[850,200],green:R4(60,60,880,520),
+   zones:[{t:'water',r:[430,60,140,520]}],portals:[{a:[350,160],b:[660,470]},{a:[350,480],b:[130,320]}]}),
+ HL({name:'The Big Top',par:4,tee:[110,560],cup:[900,100],green:R4(40,40,920,560),
+   walls:[[200,220,200,600],[700,200,960,200]],zones:[{t:'conv',r:[220,40,300,150],dir:[240,0]},{t:'sand',r:[720,40,120,110]}],
+   bumpers:[{x:450,y:450,r:26},{x:820,y:440,r:26}],portals:[{a:[110,300],b:[560,120]}],movers:[{type:'mill',x:600,y:360,len:100,spd:1.8}]}),
+];
+const COURSE4=[ // Glacier Peak
+ HL({name:'Slip n Slide',par:2,tee:[150,320],cup:[850,320],green:R4(80,200,840,240),zones:[{t:'ice',r:[80,200,840,240]}]}),
+ HL({name:'Black Ice',par:3,tee:[120,500],cup:[880,120],green:R4(60,60,880,520),zones:[{t:'ice',r:[60,60,880,520]},{t:'water',r:[340,60,120,290]},{t:'water',r:[560,290,120,290]}]}),
+ HL({name:'Avalanche',par:3,tee:[140,140],cup:[860,140],green:R4(60,60,880,520),zones:[{t:'conv',r:[260,60,480,410],dir:[0,200]},{t:'water',r:[260,470,480,110]}]}),
+ HL({name:'Ice Rink',par:3,tee:[120,320],cup:[880,320],green:R4(60,80,880,480),zones:[{t:'ice',r:[60,80,880,480]}],
+   bumpers:[{x:380,y:200,r:26},{x:380,y:440,r:26},{x:620,y:200,r:26},{x:620,y:440,r:26},{x:500,y:320,r:30}]}),
+ HL({name:'Crevasse',par:3,tee:[130,320],cup:[870,320],green:R4(60,60,880,520),zones:[{t:'ice',r:[300,285,400,70]},{t:'water',r:[300,60,400,225]},{t:'water',r:[300,355,400,225]}]}),
+ HL({name:'Ski Lift',par:4,tee:[120,520],cup:[880,120],green:R4(60,60,880,520),
+   walls:[[300,240,300,580],[640,60,640,400]],zones:[{t:'conv',r:[320,60,300,520],dir:[0,-200]},{t:'ice',r:[660,60,280,520]}],
+   movers:[{type:'slide',x:640,y1:430,y2:560,h:70,spd:1.3}]}),
+ HL({name:'Snowplough',par:3,tee:[110,320],cup:[890,320],green:R4(60,140,880,360),zones:[{t:'sand',r:[220,140,580,110]},{t:'sand',r:[220,390,580,110]}],
+   movers:[{type:'mill',x:500,y:320,len:120,spd:1.2}]}),
+ HL({name:'The Igloo',par:4,tee:[140,520],cup:[500,360],green:R4(60,60,880,520),zones:[{t:'ice',r:[60,60,880,520]}],
+   walls:[[400,220,465,220],[535,220,600,220],[600,220,600,420],[600,420,400,420],[400,420,400,220]],bumpers:[{x:500,y:120,r:22}]}),
+ HL({name:'The Summit',par:5,tee:[100,560],cup:[880,90],green:R4(40,40,920,560),
+   walls:[[250,40,250,440],[500,200,500,600],[750,40,750,440]],
+   zones:[{t:'ice',r:[260,40,230,560]},{t:'conv',r:[510,200,230,400],dir:[0,-220]},{t:'water',r:[40,40,200,120]},{t:'sand',r:[760,450,180,150]}],
+   bumpers:[{x:620,y:110,r:24}],movers:[{type:'mill',x:870,y:300,len:60,spd:2}]}),
+];
+const COURSES=[
+ {id:'meadow',name:'Meadow Links',ic:'🌳',grass:['#3fa34d','#45b055','#389545'],bg:['#14402a','#0a2015'],holes:COURSE1},
+ {id:'seaside',name:'Seaside Scramble',ic:'🏖️',grass:['#47ad5c','#52b866','#3d9a52'],bg:['#1d5a7a','#0b2a3d'],holes:COURSE2},
+ {id:'funhouse',name:'Funhouse Frenzy',ic:'🎪',grass:['#8a4fd1','#9660db','#7a42bd'],bg:['#3a1460','#14062a'],holes:COURSE3},
+ {id:'glacier',name:'Glacier Peak',ic:'🏔️',grass:['#5db8a0','#68c4ab','#52a891'],bg:['#5b7b99','#1c2b3d'],holes:COURSE4},
+];
+COURSES.push({id:'tour',name:'The Grand Tour',ic:'🏆',grass:COURSES[0].grass,bg:COURSES[0].bg,holes:[].concat(...COURSES.map(c=>c.holes.map(h=>Object.assign({_c:c},h))))});
+let CI=0,HOLES=COURSE1;
 
 /* ---------- STATE ---------- */
 let hole=0,strokes=0,scores=[],ball,drag=null,state='title',parts=[],ripples=[],t=0,lastSafe,inCup=0,portalCd=0,trail=[];
-let best=+localStorage.getItem('slinggolf_best')||null;
-$('best').textContent=best!=null?`Best round: ${fmt(best)}`:'';
+let best=null;
+let PROG=(()=>{try{return JSON.parse(localStorage.getItem('slinggolf_prog'))}catch(e){return null}})()||{unlocked:1,best:{}};
+{const ob=localStorage.getItem('slinggolf_best');if(ob!=null&&PROG.best.meadow==null){PROG.best.meadow=+ob;PROG.unlocked=Math.max(PROG.unlocked,2);}}
+function saveProg(){try{localStorage.setItem('slinggolf_prog',JSON.stringify(PROG))}catch(e){}}
+function renderCourses(){
+  const el=$('courses');el.innerHTML='';
+  COURSES.forEach((c,i)=>{const isTour=c.id==='tour',open=isTour?PROG.unlocked>4:i<PROG.unlocked,b=PROG.best[c.id];
+    const btn=document.createElement('button');btn.className='course'+(open?'':' locked');
+    const par=c.holes.reduce((s,h)=>s+h.par,0);
+    btn.innerHTML=`<span class="ci">${open?c.ic:'🔒'}</span><span class="cn">${c.name}<small>${c.holes.length} holes · par ${par}${b!=null?' · best '+fmt(b):''}</small></span>`;
+    btn.onclick=()=>{if(!open){flashMsg(isTour?'Finish all four courses to unlock the Grand Tour.':'Finish '+COURSES[i-1].name+' to unlock this one.');return}startCourse(i)};
+    el.appendChild(btn);});
+}
+function flashMsg(m){const b=$('best');b.textContent=m;b.style.opacity=1;clearTimeout(flashMsg.t);flashMsg.t=setTimeout(()=>{b.textContent='';},2600);}
+function startCourse(i){audio();CI=i;HOLES=COURSES[i].holes;grassPat=null;scores=[];best=PROG.best[COURSES[i].id]??null;$('hN').textContent=HOLES.length;
+  $('title').classList.add('hidden');['hud','side','tip'].forEach(x=>$(x).classList.remove('hidden'));loadHole(0);}
 function fmt(n){return n===0?'E':n>0?'+'+n:''+n;}
 const R=9,CUP_R=15;
 
 function loadHole(i){
   hole=i;strokes=0;const h=HOLES[i];ball={x:h.tee[0],y:h.tee[1],vx:0,vy:0,z:0,sink:0};lastSafe={x:ball.x,y:ball.y};inCup=0;trail=[];
   $('hHole').textContent=i+1;$('hPar').textContent=h.par;$('hStr').textContent=0;updTot();
-  banner(`Hole ${i+1}: ${h.name}`,'#fff');state='play';
+  banner(`Hole ${i+1}: ${h.name}`,'#fff');state='play';if(h._c&&(i===0||HOLES[i-1]._c!==h._c)){grassPat=null;}
 }
 function updTot(){const tot=scores.reduce((s,v,i)=>s+v-HOLES[i].par,0);$('hTot').textContent=fmt(tot);}
 function banner(txt,col){const b=$('banner');b.textContent=txt;b.style.color=col;b.animate([{opacity:0,transform:'scale(.6) skewX(-10deg)'},{opacity:1,transform:'scale(1.05) skewX(-10deg)',offset:.2},{opacity:1,transform:'scale(1) skewX(-10deg)',offset:.8},{opacity:0,transform:'translateY(-40px) skewX(-10deg)'}],{duration:1800,easing:'ease-out'});}
@@ -200,15 +291,17 @@ function finishHole(){
 }
 function endRound(){
   state='done';const tot=scores.reduce((s,v,i)=>s+v-HOLES[i].par,0);
-  let nb=false;if(best==null||tot<best){best=tot;localStorage.setItem('slinggolf_best',tot);nb=true;}
-  showCard(true,`Final: <b>${fmt(tot)}</b> (${scores.reduce((a,b)=>a+b,0)} strokes)${nb?'<br>🏆 New best round!':`<br>Best: ${fmt(best)}`}`);
+  const cid=COURSES[CI].id;let nb=false;if(best==null||tot<best){best=tot;PROG.best[cid]=tot;nb=true;if(cid==='meadow')try{localStorage.setItem('slinggolf_best',tot)}catch(e){}}
+  let unl='';if(CI<4&&PROG.unlocked<CI+2){PROG.unlocked=CI+2;unl=CI<3?`<br>🔓 Unlocked: <b>${COURSES[CI+1].name}</b>`:'<br>🔓 Unlocked: <b>The Grand Tour</b> (all 36 holes)';}saveProg();
+  showCard(true,`Final: <b>${fmt(tot)}</b> (${scores.reduce((a,b)=>a+b,0)} strokes)${nb?'<br>🏆 New best round!':`<br>Best: ${fmt(best)}`}${unl}`);
 }
 function showCard(final,msg=''){
-  const tbl=`<table><tr><th>HOLE</th>${HOLES.map((_,i)=>`<th>${i+1}</th>`).join('')}<th>TOT</th></tr>
-  <tr><th>PAR</th>${HOLES.map(h=>`<td>${h.par}</td>`).join('')}<td>${HOLES.reduce((s,h)=>s+h.par,0)}</td></tr>
-  <tr><th>YOU</th>${HOLES.map((h,i)=>{const s=scores[i];if(s==null)return'<td>·</td>';const d=s-h.par;return`<td class="${d<=-2||s===1?'eagle':d===-1?'birdie':d===0?'par':'bogey'}">${s}</td>`;}).join('')}<td>${scores.reduce((a,b)=>a+(b||0),0)}</td></tr></table>`;
+  let tbl='';for(let o=0;o<HOLES.length;o+=9){const HS=HOLES.slice(o,o+9);
+  tbl+=`<table><tr><th>HOLE</th>${HS.map((_,i)=>`<th>${o+i+1}</th>`).join('')}<th>TOT</th></tr>
+  <tr><th>PAR</th>${HS.map(h=>`<td>${h.par}</td>`).join('')}<td>${HS.reduce((s,h)=>s+h.par,0)}</td></tr>
+  <tr><th>YOU</th>${HS.map((h,j)=>{const i=o+j,s=scores[i];if(s==null)return'<td>·</td>';const d=s-h.par;return`<td class="${d<=-2||s===1?'eagle':d===-1?'birdie':d===0?'par':'bogey'}">${s}</td>`;}).join('')}<td>${scores.slice(o,o+9).reduce((a,b)=>a+(b||0),0)}</td></tr></table>`;}
   $('cardTable').innerHTML=tbl;$('cardMsg').innerHTML=msg;$('cardTitle').textContent=final?'Round Complete!':'Scorecard';
-  $('cardAgain').classList.toggle('hidden',!final);$('cardClose').classList.toggle('hidden',final);$('card').classList.remove('hidden');
+  $('cardAgain').classList.toggle('hidden',!final);$('cardMenu').classList.toggle('hidden',!final);$('cardClose').classList.toggle('hidden',final);$('card').classList.remove('hidden');
 }
 
 /* ---------- FX ---------- */
@@ -228,7 +321,8 @@ cv.addEventListener('mousedown',pdown);addEventListener('mousemove',pmove);addEv
 cv.addEventListener('touchstart',pdown,{passive:false});addEventListener('touchmove',e=>{e.preventDefault();pmove(e)},{passive:false});addEventListener('touchend',pup);
 cv.addEventListener('contextmenu',e=>{e.preventDefault();drag=null;});
 addEventListener('keydown',e=>{if(e.code==='Escape')drag=null;if(e.code==='KeyR')$('resetBtn').click();});
-$('playBtn').onclick=()=>{audio();scores=[];$('title').classList.add('hidden');['hud','side','tip'].forEach(i=>$(i).classList.remove('hidden'));loadHole(0);};
+renderCourses();
+$('cardMenu').onclick=()=>{$('card').classList.add('hidden');['hud','side','tip'].forEach(i=>$(i).classList.add('hidden'));state='title';renderCourses();$('title').classList.remove('hidden');};
 $('cardBtn').onclick=()=>{if(state==='play')showCard(false);};
 $('cardClose').onclick=()=>$('card').classList.add('hidden');
 $('cardAgain').onclick=()=>{$('card').classList.add('hidden');scores=[];loadHole(0);};
@@ -237,15 +331,16 @@ $('muteBtn').onclick=()=>{muted=!muted;$('muteBtn').textContent=muted?'🔇':'�
 
 /* ---------- RENDER ---------- */
 let grassPat=null;
-function makeGrass(){const o=document.createElement('canvas');o.width=o.height=64;const g=o.getContext('2d');g.fillStyle='#3fa34d';g.fillRect(0,0,64,64);
-  for(let i=0;i<220;i++){g.fillStyle=Math.random()<.5?'#45b055':'#389545';g.fillRect(Math.random()*64,Math.random()*64,1.5,3);}return cx.createPattern(o,'repeat');}
+function curC(){const h=HOLES[hole];return (h&&h._c)||COURSES[CI];}
+function makeGrass(){const G=curC().grass;const o=document.createElement('canvas');o.width=o.height=64;const g=o.getContext('2d');g.fillStyle=G[0];g.fillRect(0,0,64,64);
+  for(let i=0;i<220;i++){g.fillStyle=Math.random()<.5?G[1]:G[2];g.fillRect(Math.random()*64,Math.random()*64,1.5,3);}return cx.createPattern(o,'repeat');}
 function greenPath(h){cx.beginPath();const pts=h.green;cx.moveTo(pts[0][0],pts[0][1]);pts.forEach(s=>cx.lineTo(s[2],s[3]));cx.closePath();}
 function drawSeg(s,col,w){cx.strokeStyle=col;cx.lineWidth=w;cx.lineCap='round';cx.beginPath();cx.moveTo(s[0],s[1]);cx.lineTo(s[2],s[3]);cx.stroke();}
 
 function render(){
   cx.setTransform(DPR,0,0,DPR,0,0);
   // backdrop
-  const bg=cx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#14402a');bg.addColorStop(1,'#0a2015');cx.fillStyle=bg;cx.fillRect(0,0,W,H);
+  const BG=curC().bg,bg=cx.createLinearGradient(0,0,0,H);bg.addColorStop(0,BG[0]);bg.addColorStop(1,BG[1]);cx.fillStyle=bg;cx.fillRect(0,0,W,H);
   cx.save();cx.translate(ox,oy);cx.scale(scale,scale);
   // trees / decor
   cx.globalAlpha=.25;for(let i=0;i<16;i++){const x=(i*173)%1100-50,y=(i*97)%700-30;cx.fillStyle='#0b2a18';cx.beginPath();cx.arc(x,y,40+(i%3)*15,0,Math.PI*2);cx.fill();}cx.globalAlpha=1;
@@ -263,8 +358,9 @@ function render(){
       cx.strokeStyle='#ffffff88';cx.lineWidth=2;for(let i=0;i<8;i++){const sx=x+((i*131)%w),sy=y+((i*71)%hh);cx.beginPath();cx.moveTo(sx,sy);cx.lineTo(sx+30,sy+12);cx.stroke();}}
     if(z.t==='water'){const g=cx.createLinearGradient(x,y,x,y+hh);g.addColorStop(0,'#3b9fe0');g.addColorStop(1,'#1d5fa5');cx.fillStyle=g;rr(x,y,w,hh,14);cx.fill();
       cx.strokeStyle='#ffffff55';cx.lineWidth=2;for(let i=0;i<Math.max(3,w*hh/4000);i++){const sx=x+10+((i*67)%Math.max(1,w-40)),sy=y+12+((i*43)%Math.max(1,hh-24));cx.beginPath();cx.arc(sx+Math.sin(t*2+i)*5,sy,8,.2*Math.PI,.8*Math.PI);cx.stroke();}}
-    if(z.t==='conv'){cx.fillStyle='#55606b';cx.fillRect(x,y,w,hh);cx.save();cx.beginPath();cx.rect(x,y,w,hh);cx.clip();const dir=Math.sign(z.dir[0])||1;cx.fillStyle='#fbbf24aa';
-      const off=(t*80*dir)%60;for(let ax=x-60;ax<x+w+60;ax+=60){for(let ay=y+20;ay<y+hh;ay+=50){const px=ax+off;cx.beginPath();cx.moveTo(px+dir*14,ay);cx.lineTo(px-dir*8,ay-12);cx.lineTo(px-dir*8,ay+12);cx.fill();}}cx.restore();}}
+    if(z.t==='conv'){cx.fillStyle='#55606b';cx.fillRect(x,y,w,hh);cx.save();cx.beginPath();cx.rect(x,y,w,hh);cx.clip();cx.fillStyle='#fbbf24aa';
+      if(!z.dir[0]&&z.dir[1]){const dir=Math.sign(z.dir[1]);const off=(t*80*dir)%60;for(let ay=y-60;ay<y+hh+60;ay+=60){for(let ax=x+25;ax<x+w;ax+=50){const py=ay+off;cx.beginPath();cx.moveTo(ax,py+dir*14);cx.lineTo(ax-12,py-dir*8);cx.lineTo(ax+12,py-dir*8);cx.fill();}}}
+      else{const dir=Math.sign(z.dir[0])||1;const off=(t*80*dir)%60;for(let ax=x-60;ax<x+w+60;ax+=60){for(let ay=y+20;ay<y+hh;ay+=50){const px=ax+off;cx.beginPath();cx.moveTo(px+dir*14,ay);cx.lineTo(px-dir*8,ay-12);cx.lineTo(px-dir*8,ay+12);cx.fill();}}}cx.restore();}}
   cx.restore();
   // ripples
   for(const r of ripples){r.r+=60/60;r.life-=1/60;cx.strokeStyle=`rgba(255,255,255,${Math.max(0,r.life)})`;cx.lineWidth=2;cx.beginPath();cx.arc(r.x,r.y,r.r,0,Math.PI*2);cx.stroke();}

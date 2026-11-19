@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Breachline</title>
+<style>
+  :root {
+    --bg: #05080a; --bg2: #0a1014; --panel: #0d161a; --line: #15282e;
+    --fg: #c8f6e4; --dim: #5f8a84; --accent: #28f0a0; --accent2: #16c0ff;
+    --warn: #ffd23f; --danger: #ff4d5e; --glow: 0 0 12px;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --display: "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin:0; padding:0 }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(120% 70% at 50% -10%, #0c2a24 0%, var(--bg) 55%), var(--bg);
+    color: var(--fg); font-family: var(--mono); font-size:14px; overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+  }
+  #app {
+    max-width: 480px; margin: 0 auto; height: 100%;
+    display: flex; flex-direction: column; position: relative;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .hud {
+    flex: none; padding: 14px 16px 10px;
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    border-bottom: 1px solid var(--line); background: linear-gradient(var(--bg2), transparent);
+  }
+  .hud .brand { font-family: var(--display); font-weight: 900; font-size: 20px; letter-spacing: 4px;
+    color: var(--accent); text-shadow: var(--glow) rgba(40,240,160,.5); }
+  .hud .brand b { color: var(--accent2); }
+  .hud .row { display: flex; gap: 10px; margin-top: 10px; }
+  .stat { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; }
+  .stat .k { font-size: 9.5px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; }
+  .stat .v { font-size: 15px; font-weight: 700; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .stat .v.cr { color: var(--accent); }
+  .xpwrap { margin-top: 9px; height: 6px; background: #0a1a1a; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+  .xpbar { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .3s; }
+  .scroll { flex: 1; overflow-y: auto; padding: 14px 16px 84px; }
+  .scroll::-webkit-scrollbar { width: 0; }
+  .eyebrow { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin: 4px 2px 10px; }
+  [hidden] { display: none !important; }
+  .target, .upg {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px; margin-bottom: 11px; display: flex; align-items: center; gap: 12px;
+    width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+    transition: border-color .15s, transform .05s;
+  }
+  .target:active, .upg:active { transform: scale(.985); border-color: var(--accent); }
+  .target.locked { opacity: .4; cursor: not-allowed; }
+  .target .ico, .upg .ico { font-size: 22px; width: 34px; text-align: center; flex: none; filter: drop-shadow(0 0 6px rgba(40,240,160,.4)); }
+  .target .body, .upg .body { flex: 1; min-width: 0; }
+  .target .name, .upg .name { font-weight: 700; font-size: 14px; display:block }
+  .target .meta, .upg .meta { font-size: 11px; color: var(--dim); margin-top: 3px; line-height: 1.5; display:block }
+  .reward { color: var(--accent); font-weight: 700; }
+  .fwtag { color: var(--accent2); }
+  .cost { font-family: var(--display); font-weight: 800; font-size: 13px; color: var(--warn); white-space: nowrap; flex: none;
+    text-shadow: 0 0 8px rgba(255,210,63,.3); }
+  .cost.cant { color: var(--danger); text-shadow: none; }
+  .lvtag { font-size: 10px; color: var(--danger); letter-spacing: 1px; }
+  .owned { font-size: 10px; color: var(--accent); letter-spacing: 1px; }
+  .breach { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; z-index: 20; }
+  .breach-head { flex: none; padding: 16px; padding-top: calc(16px + env(safe-area-inset-top,0px)); border-bottom: 1px solid var(--line); }
+  .breach-head .t { font-family: var(--display); font-weight:900; font-size: 16px; letter-spacing: 3px; color: var(--accent2); }
+  .breach-head .s { font-size: 11px; color: var(--dim); margin-top: 4px; }
+  .breach-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 20px; }
+  .bars { display: flex; flex-direction: column; gap: 16px; }
+  .barblock .lab { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .barblock .lab .pct { font-variant-numeric: tabular-nums; }
+  .track { height: 20px; border-radius: 6px; background: #081414; border: 1px solid var(--line); overflow: hidden; position: relative; }
+  .fill { height: 100%; width: 0; transition: width .08s linear; }
+  .fill.crack { background: linear-gradient(90deg, var(--accent2), var(--accent)); box-shadow: inset 0 0 10px rgba(40,240,160,.6); }
+  .fill.trace { background: linear-gradient(90deg, #8a2b33, var(--danger)); box-shadow: inset 0 0 10px rgba(255,77,94,.6); }
+  .crackpct { color: var(--accent); } .tracepct { color: var(--danger); }
+  .log { height: 70px; overflow: hidden; font-size: 10.5px; line-height: 1.6; color: var(--dim); background: #060c0c;
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .log b { color: var(--accent); }
+  .inject {
+    flex: none; margin: 0 20px; margin-bottom: calc(24px + env(safe-area-inset-bottom,0px));
+    padding: 24px; border-radius: 16px; border: 2px solid var(--accent);
+    background: radial-gradient(circle, rgba(40,240,160,.18), rgba(40,240,160,.04));
+    color: var(--accent); font-family: var(--display); font-weight: 900; font-size: 22px; letter-spacing: 4px;
+    text-shadow: var(--glow) rgba(40,240,160,.7); cursor: pointer; transition: transform .05s, box-shadow .1s;
+  }
+  .inject:active { transform: scale(.97); box-shadow: 0 0 40px rgba(40,240,160,.4); }
+  .inject.pulse { animation: pulse .12s; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 rgba(40,240,160,.6);} 100% { box-shadow: 0 0 30px rgba(40,240,160,.5);} }
+  .result { position: absolute; inset: 0; background: rgba(5,8,10,.95); z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 30px; }
+  .result h2 { font-family: var(--display); font-weight:900; font-size: 30px; letter-spacing: 4px; }
+  .result.win h2 { color: var(--accent); text-shadow: var(--glow) rgba(40,240,160,.6); }
+  .result.lose h2 { color: var(--danger); text-shadow: var(--glow) rgba(255,77,94,.6); }
+  .result .detail { font-size: 14px; color: var(--fg); line-height:1.6 }
+  .result .detail .reward { font-size: 20px; }
+  .btn { margin-top: 8px; padding: 14px 28px; border-radius: 10px; border: 1px solid var(--accent);
+    background: rgba(40,240,160,.1); color: var(--accent); font-family: var(--display); font-weight: 800;
+    letter-spacing: 2px; font-size: 14px; cursor: pointer; }
+  .btn:active { background: rgba(40,240,160,.2); }
+  .btn.ghost { border-color: var(--line); color: var(--dim); background: none; }
+  .floater { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); pointer-events: none;
+    font-family: var(--display); font-weight: 900; font-size: 18px; color: var(--accent); z-index: 25;
+    text-shadow: var(--glow) rgba(40,240,160,.7); opacity: 0; }
+  .floater.go { animation: rise .7s ease-out; }
+  @keyframes rise { 0% { opacity: 1; top: 45%; } 100% { opacity: 0; top: 30%; } }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; display: flex; background: var(--bg2);
+    border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 10; }
+  .nav button { flex: 1; background: none; border: 0; color: var(--dim); font-family: var(--mono); font-size: 11px;
+    letter-spacing: 1.5px; padding: 14px 0; cursor: pointer; text-transform: uppercase; }
+  .nav button[aria-selected="true"] { color: var(--accent); text-shadow: var(--glow) rgba(40,240,160,.5); }
+  .nav .dot { display: block; font-size: 16px; margin-bottom: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hud">
+    <div class="brand">BREACH<b>LINE</b></div>
+    <div class="row">
+      <div class="stat"><div class="k">Credits</div><div class="v cr" id="s-cr">0</div></div>
+      <div class="stat"><div class="k">Level</div><div class="v" id="s-lv">1</div></div>
+      <div class="stat"><div class="k">Rep</div><div class="v" id="s-rep">—</div></div>
+    </div>
+    <div class="xpwrap"><div class="xpbar" id="xpbar"></div></div>
+  </div>
+  <div class="scroll panel" id="p-targets">
+    <div class="eyebrow">// select a target to breach</div>
+    <div id="targetList"></div>
+  </div>
+  <div class="scroll panel" id="p-upgrades" hidden>
+    <div class="eyebrow">// upgrade your rig</div>
+    <div id="upgList"></div>
+  </div>
+  <div class="breach" id="breach" hidden>
+    <div class="breach-head">
+      <div class="t" id="b-name">TARGET</div>
+      <div class="s" id="b-sub">firewall · trace</div>
+    </div>
+    <div class="breach-body">
+      <div class="bars">
+        <div class="barblock">
+          <div class="lab"><span>Firewall crack</span><span class="pct crackpct" id="b-crackpct">0%</span></div>
+          <div class="track"><div class="fill crack" id="b-crack"></div></div>
+        </div>
+        <div class="barblock">
+          <div class="lab"><span>Trace</span><span class="pct tracepct" id="b-tracepct">0%</span></div>
+          <div class="track"><div class="fill trace" id="b-trace"></div></div>
+        </div>
+      </div>
+      <div class="log" id="b-log"></div>
+    </div>
+    <button class="inject" id="injectBtn">▶ INJECT</button>
+    <div class="floater" id="floater"></div>
+    <div class="result" id="result" hidden>
+      <h2 id="r-title">BREACHED</h2>
+      <div class="detail" id="r-detail"></div>
+      <button class="btn" id="r-again">RUN AGAIN</button>
+      <button class="btn ghost" id="r-back">BACK TO TARGETS</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button data-tab="targets" aria-selected="true" onclick="tab('targets')"><span class="dot">⌁</span>Targets</button>
+    <button data-tab="upgrades" onclick="tab('upgrades')"><span class="dot">⚙</span>Rig</button>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const fmt = n => n >= 1e6 ? (n/1e6).toFixed(2)+"M" : n >= 1e3 ? (n/1e3).toFixed(1)+"k" : Math.floor(n);
+  const TARGETS = [
+    {id:"router", ico:"📶", name:"Home Router",        fw:10,  trace:6,  reward:25,   xp:10,  lv:1},
+    {id:"pc",     ico:"💻", name:"Abandoned PC",       fw:20,  trace:7,  reward:45,   xp:16,  lv:1},
+    {id:"biz",    ico:"🏢", name:"Small-Biz Server",   fw:45,  trace:9,  reward:120,  xp:34,  lv:2},
+    {id:"cam",    ico:"📷", name:"CCTV Network",        fw:75,  trace:10, reward:210,  xp:55,  lv:3},
+    {id:"wallet", ico:"🪙", name:"Crypto Wallet",       fw:130, trace:12, reward:430,  xp:90,  lv:4},
+    {id:"bank",   ico:"🏦", name:"Bank Clearing Node",  fw:240, trace:15, reward:950,  xp:160, lv:5},
+    {id:"gov",    ico:"🛰", name:"Gov Mainframe",       fw:460, trace:18, reward:2200, xp:320, lv:7},
+    {id:"qdc",     ico:"🧠", name:"Quantum Datacenter",  fw:900, trace:22, reward:5200, xp:650, lv:9},
+  ];
+  const UPGRADES = [
+    {id:"cpu",     ico:"⚡", name:"CPU Core",     desc:"+1 crack per inject",        base:30,  mult:1.55},
+    {id:"stealth", ico:"🕶", name:"Stealth Mask", desc:"-7% trace speed",            base:55,  mult:1.7},
+    {id:"botnet",  ico:"🕸", name:"Botnet Node",  desc:"+2 auto-crack / sec",        base:90,  mult:1.8},
+    {id:"overclk", ico:"🔥", name:"Overclock",    desc:"+2 crack per inject",        base:260, mult:1.9},
+  ];
+  const REPS = ["Script Kiddie","Prowler","Operator","Ghost","Cipher","Phantom","Overlord","Legend"];
+  const DEF = {credits:0, xp:0, lv:1, upg:{cpu:0,stealth:0,botnet:0,overclk:0}};
+  let S = load();
+  function load(){ try { const r = JSON.parse(localStorage.getItem("breachline")); if(r&&r.upg) return Object.assign({},DEF,r);}catch(e){} return JSON.parse(JSON.stringify(DEF)); }
+  function save(){ try { localStorage.setItem("breachline", JSON.stringify(S)); } catch(e){} }
+  const xpToNext = lv => Math.floor(40 * Math.pow(lv, 1.6));
+  function addXp(n){ S.xp += n; while(S.xp >= xpToNext(S.lv)){ S.xp -= xpToNext(S.lv); S.lv++; } }
+  const upgCost = u => Math.floor(u.base * Math.pow(u.mult, S.upg[u.id]));
+  const crackPerTap = () => 1 + S.upg.cpu + S.upg.overclk*2;
+  const autoPerSec  = () => S.upg.botnet*2;
+  const traceMult   = () => Math.max(0.3, 1 - S.upg.stealth*0.07);
+  function renderHUD(){
+    $("s-cr").textContent = fmt(S.credits);
+    $("s-lv").textContent = S.lv;
+    $("s-rep").textContent = REPS[Math.min(REPS.length-1, Math.floor((S.lv-1)/1.5))];
+    $("xpbar").style.width = Math.min(100, 100*S.xp/xpToNext(S.lv)) + "%";
+  }
+  function renderTargets(){
+    $("targetList").innerHTML = TARGETS.map(t => {
+      const locked = S.lv < t.lv;
+      return `<button class="target ${locked?'locked':''}" ${locked?'':`onclick="startBreach('${t.id}')"`}>
+        <span class="ico">${t.ico}</span>
+        <span class="body"><span class="name">${t.name}</span>
+          <span class="meta"><span class="fwtag">⬡ ${t.fw} firewall</span> · trace ${t.trace}/s · <span class="reward">+${fmt(t.reward)} cr</span></span></span>
+        ${locked?`<span class="lvtag">LVL ${t.lv}</span>`:`<span class="owned">▶</span>`}
+      </button>`;
+    }).join("");
+  }
+  function renderUpgrades(){
+    $("upgList").innerHTML = UPGRADES.map(u => {
+      const c = upgCost(u), cant = S.credits < c;
+      return `<button class="upg" onclick="buy('${u.id}')">
+        <span class="ico">${u.ico}</span>
+        <span class="body"><span class="name">${u.name} <span class="owned">Lv ${S.upg[u.id]}</span></span>
+          <span class="meta">${u.desc}</span></span>
+        <span class="cost ${cant?'cant':''}">${fmt(c)} cr</span>
+      </button>`;
+    }).join("");
+  }
+  window.buy = function(id){
+    const u = UPGRADES.find(x=>x.id===id), c = upgCost(u);
+    if(S.credits < c) return;
+    S.credits -= c; S.upg[id]++; save(); renderHUD(); renderUpgrades();
+  };
+  window.tab = function(name){
+    document.querySelectorAll(".nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===name));
+    $("p-targets").hidden = name!=="targets";
+    $("p-upgrades").hidden = name!=="upgrades";
+    if(name==="upgrades") renderUpgrades();
+  };
+  let B = null, timer = null;
+  window.startBreach = function(tid){
+    const t = TARGETS.find(x=>x.id===tid);
+    B = {t, crack:0, trace:0, done:false};
+    $("b-name").textContent = t.name.toUpperCase();
+    $("b-sub").textContent = `firewall ${t.fw} · trace ${t.trace}/s · reward +${fmt(t.reward)} cr`;
+    $("b-log").innerHTML = `> establishing uplink to <b>${t.name}</b>...<br>> probing ports... inject to crack.`;
+    $("result").hidden = true;
+    $("breach").hidden = false;
+    paintBreach();
+    clearInterval(timer);
+    timer = setInterval(tick, 100);
+  };
+  function tick(){
+    if(!B || B.done) return;
+    B.trace += B.t.trace * traceMult() * 0.1;
+    if(autoPerSec()) B.crack += autoPerSec()*0.1;
+    if(B.crack >= B.t.fw) return finish(true);
+    if(B.trace >= 100)   return finish(false);
+    paintBreach();
+  }
+  window.inject = function(){
+    if(!B || B.done) return;
+    B.crack += crackPerTap();
+    const btn = $("injectBtn"); btn.classList.remove("pulse"); void btn.offsetWidth; btn.classList.add("pulse");
+    float("+"+crackPerTap());
+    if(B.crack >= B.t.fw) finish(true); else paintBreach();
+  };
+  function paintBreach(){
+    const cp = Math.min(100, 100*B.crack/B.t.fw), tp = Math.min(100, B.trace);
+    $("b-crack").style.width = cp+"%"; $("b-trace").style.width = tp+"%";
+    $("b-crackpct").textContent = Math.floor(cp)+"%";
+    $("b-tracepct").textContent = Math.floor(tp)+"%";
+    $("b-tracepct").style.color = tp>70 ? "var(--danger)" : "";
+  }
+  function float(txt){ const f = $("floater"); f.textContent = txt; f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); }
+  function finish(win){
+    B.done = true; clearInterval(timer);
+    const r = $("result"); r.className = "result " + (win?"win":"lose");
+    if(win){
+      const bonus = B.trace < 40 ? Math.floor(B.t.reward*0.25) : 0;
+      const total = B.t.reward + bonus;
+      S.credits += total; addXp(B.t.xp); save(); renderHUD(); renderTargets();
+      $("r-title").textContent = "BREACHED";
+      $("r-detail").innerHTML = `<div class="reward">+${fmt(total)} credits</div>+${B.t.xp} XP`+
+        (bonus?`<br><span style="color:var(--accent2)">⚡ clean-run bonus +${fmt(bonus)}</span>`:"");
+    } else {
+      $("r-title").textContent = "TRACED";
+      $("r-detail").innerHTML = `Connection killed — they found you.<br><span style="color:var(--dim)">No credits. Upgrade stealth or crack faster.</span>`;
+    }
+    r.hidden = false;
+  }
+  $("injectBtn").addEventListener("click", window.inject);
+  $("r-again").addEventListener("click", ()=>{ if(B) startBreach(B.t.id); });
+  $("r-back").addEventListener("click", ()=>{ $("breach").hidden = true; clearInterval(timer); renderTargets(); });
+  renderHUD(); renderTargets();
+})();
+</script>
+</body>
+</html>
