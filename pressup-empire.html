@@ -53,7 +53,7 @@ html,body{height:100%;overflow:hidden;background:#11141b;color:#f2f2f2;font-fami
   <div id="reps">0 reps</div><div id="rps">0 per second</div><div id="medals"></div>
   <canvas id="stage"></canvas>
   <div id="tapHint">TAP THE SQUADDIE · or hold Space</div>
-  <div id="event" title="Click!">🎖️</div>
+  <div id="event" title="Click him!"></div>
  </div>
  <div id="right">
   <div id="tabs"><button class="tab on" data-t="gen">Lads</button><button class="tab" data-t="up">Upgrades</button><button class="tab" data-t="pass">Pass Out</button></div>
@@ -65,29 +65,59 @@ html,body{height:100%;overflow:hidden;background:#11141b;color:#f2f2f2;font-fami
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
+const SK='#e0aa80',OL='#5a6a32',DK='#3a4a1e',GD='#e8c04a';
+const PI={
+ recruit:`<circle cx="20" cy="16" r="9" fill="${SK}"/><path d="M11 14a9 9 0 0 1 18 0" fill="#c8a080"/><circle cx="23.5" cy="16" r="1.4" fill="#222"/><path d="M8 36q0-11 12-11t12 11z" fill="${OL}"/><path d="M17 20q3 2 6 0" stroke="#7a3a2a" stroke-width="1.4" fill="none"/>`,
+ lancejack:`<path d="M6 16h7l14-8v24l-14-8H6z" fill="${GD}"/><rect x="6" y="16" width="7" height="8" fill="#c8a03a"/><path d="M30 13q4 7 0 14M33 10q6 10 0 20" stroke="#fff" stroke-width="2" fill="none"/><path d="M12 24l3 9h4l-2-9z" fill="#c8a03a"/>`,
+ pti:`<path d="M8 10h24l-2 22h-8l-2-12-2 12h-8z" fill="#c8102e"/><rect x="8" y="10" width="24" height="4" fill="#f4f4f0"/><path d="M20 14v6" stroke="#8a0a1e" stroke-width="1.5"/>`,
+ gymbro:`<path d="M8 32V18q0-6 6-6h3l3 6q8-6 12 2t-6 10H8z" fill="${SK}"/><path d="M20 18q8-6 12 2" stroke="#c08a60" stroke-width="1.5" fill="none"/><rect x="6" y="30" width="12" height="6" fill="${OL}"/>`,
+ bootcamp:`<path d="M4 33L20 7l16 26z" fill="${OL}"/><path d="M20 7v26" stroke="${DK}" stroke-width="1.5"/><path d="M15 33l5-10 5 10z" fill="${DK}"/><rect x="2" y="33" width="36" height="3" fill="#6a5a3a"/>`,
+ app:`<rect x="11" y="4" width="18" height="32" rx="4" fill="#2a2a32"/><rect x="13" y="8" width="14" height="22" rx="1" fill="#3a8ad8"/><path d="M15 22l3-5 3 3 4-7" stroke="#fff" stroke-width="2" fill="none"/><circle cx="20" cy="33" r="1.5" fill="#888"/><circle cx="27" cy="6" r="3" fill="#e0302a"/>`,
+ gym:`<rect x="4" y="13" width="5" height="14" rx="1.5" fill="#3a3a42"/><rect x="9" y="10" width="5" height="20" rx="1.5" fill="#4a4a52"/><rect x="31" y="13" width="5" height="14" rx="1.5" fill="#3a3a42"/><rect x="26" y="10" width="5" height="20" rx="1.5" fill="#4a4a52"/><rect x="14" y="18" width="12" height="4" fill="#9aa0a8"/>`,
+ factory:`<path d="M4 34V18l8 5v-5l8 5v-5l8 5V8h6v26z" fill="#7a7a82"/><rect x="8" y="26" width="4" height="4" fill="${GD}"/><rect x="16" y="26" width="4" height="4" fill="${GD}"/><rect x="24" y="26" width="4" height="4" fill="${GD}"/><path d="M31 6q2-4 6-3" stroke="#bbb" stroke-width="2.5" fill="none"/>`,
+ treadmill:`<path d="M5 30h26l4-4" stroke="#3a3a42" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M30 26V8" stroke="#5a5a62" stroke-width="3"/><rect x="26" y="6" width="9" height="5" rx="1" fill="#3a8ad8"/><path d="M18 6l-6 11h6l-4 11 10-14h-6l4-8z" fill="${GD}"/>`,
+ orbital:`<path d="M20 3q9 8 6 22H14Q11 11 20 3z" fill="#e8e8ee"/><circle cx="20" cy="14" r="3.5" fill="#3a8ad8"/><path d="M14 22l-5 7 6-2zM26 22l5 7-6-2z" fill="#c8102e"/><path d="M16 26h8l-4 10z" fill="#ff9a2a"/>`,
+ galactic:`<circle cx="20" cy="20" r="10" fill="#7a4ad8"/><circle cx="16" cy="16" r="3" fill="#9a6af8"/><ellipse cx="20" cy="21" rx="18" ry="5" fill="none" stroke="${GD}" stroke-width="2.2" transform="rotate(-18 20 20)"/><circle cx="6" cy="7" r="1.2" fill="#fff"/><circle cx="34" cy="9" r="1" fill="#fff"/><circle cx="31" cy="34" r="1.3" fill="#fff"/>`,
+ gloves:`<path d="M11 36V16q0-3 3-3t3 3v-5q0-3 3-3t3 3v4q0-3 3-3t3 3v9q0 7-5 12z" fill="#6a6a74" stroke="#a8a8b2" stroke-width="1.2"/><path d="M8 22q0-4 3-4v8z" fill="#6a6a74" stroke="#a8a8b2" stroke-width="1.2"/><rect x="11" y="31" width="15" height="5" fill="${OL}"/>`,
+ shake:`<path d="M12 10h16l-2 25H14z" fill="#f4f4f0"/><path d="M13 18h14l-1.4 17H14.4z" fill="#8a5a30"/><rect x="10" y="7" width="20" height="4" rx="1" fill="#3a8ad8"/><path d="M24 7l3-6" stroke="#e0302a" stroke-width="2.5"/>`,
+ breakfast:`<circle cx="20" cy="21" r="14" fill="#f4f4f0"/><ellipse cx="16" cy="19" rx="6" ry="5" fill="#fff"/><circle cx="16" cy="19" r="2.6" fill="#ffb020"/><rect x="21" y="22" width="9" height="3.5" rx="1.5" fill="#a0442f"/><rect x="21" y="27" width="8" height="3.5" rx="1.5" fill="#a0442f"/><circle cx="25" cy="15" r="2.4" fill="#d83a2a"/>`,
+ fuel:`<rect x="12" y="10" width="16" height="25" rx="3" fill="#2a2a32"/><rect x="12" y="17" width="16" height="9" fill="#ff5a2a"/><path d="M18 21l2-4 2 4-2 3z" fill="${GD}"/><rect x="15" y="6" width="10" height="5" rx="1" fill="#888"/>`,
+ mirror:`<ellipse cx="20" cy="18" rx="11" ry="14" fill="${GD}"/><ellipse cx="20" cy="18" rx="8.5" ry="11.5" fill="#bfe0f0"/><path d="M15 12l5-4M15 18l9-7" stroke="#fff" stroke-width="1.8"/><rect x="18" y="31" width="4" height="6" fill="${GD}"/>`,
+ music:`<path d="M15 30V10l16-4v20" stroke="#f4f4f0" stroke-width="3" fill="none"/><ellipse cx="12" cy="30" rx="4.5" ry="3.5" fill="#f4f4f0"/><ellipse cx="28" cy="26" rx="4.5" ry="3.5" fill="#f4f4f0"/>`,
+ urn:`<rect x="10" y="9" width="20" height="23" rx="4" fill="#c8ccd0"/><rect x="10" y="14" width="20" height="3" fill="#a8acb0"/><rect x="16" y="5" width="8" height="5" rx="2" fill="#a8acb0"/><path d="M30 26h4v4" stroke="#a8acb0" stroke-width="2.5" fill="none"/><rect x="12" y="32" width="16" height="4" fill="#8a8e92"/>`,
+ whistle:`<path d="M6 18a8 8 0 1 0 16 0h12v-6H14a8 8 0 0 0-8 6z" fill="${GD}"/><circle cx="14" cy="18" r="3" fill="#c8a03a"/><path d="M34 12q3-1 3-5" stroke="#c8102e" stroke-width="2" fill="none"/>`,
+ leg:`<path d="M14 4h9l-1 18 3 9h8v5H14l1-14z" fill="${SK}"/><path d="M14 30h19v6H13z" fill="#2a2a2a"/>`,
+ dna:`<path d="M13 4q14 8 0 16t0 16M27 4q-14 8 0 16t0 16" stroke="#3ad8a0" stroke-width="3" fill="none"/><path d="M15 9h10M14 16h12M14 24h12M15 31h10" stroke="#9aa" stroke-width="1.8"/>`,
+ medal:`<path d="M12 3h6l4 13h-6zM28 3h-6l-4 13h6z" fill="#c8102e"/><path d="M16 3h2l4 13h-2z" fill="#1e3a6a"/><circle cx="20" cy="26" r="10" fill="${GD}"/><circle cx="20" cy="26" r="7" fill="#c8a03a"/><path d="M20 20l1.8 4h4.2l-3.4 2.6 1.3 4.2-3.9-2.6-3.9 2.6 1.3-4.2-3.4-2.6h4.2z" fill="#fff6c8"/>`,
+ lock:`<rect x="10" y="17" width="20" height="17" rx="3" fill="#6a6a72"/><path d="M14 17v-5a6 6 0 0 1 12 0v5" stroke="#6a6a72" stroke-width="3.5" fill="none"/><circle cx="20" cy="25" r="2.5" fill="#2a2a2a"/>`,
+ news:`<rect x="6" y="9" width="28" height="22" rx="2" fill="#f4f4f0"/><rect x="9" y="12" width="10" height="8" fill="#9aa"/><path d="M22 13h9M22 17h9M9 24h22M9 28h16" stroke="#9aa" stroke-width="1.8"/>`,
+ zzz:`<text x="8" y="30" font-family="Arial Black,Impact,sans-serif" font-size="20" fill="#9ab8ff">Z</text><text x="22" y="20" font-family="Arial Black,Impact,sans-serif" font-size="13" fill="#9ab8ff">z</text>`,
+ fire:`<path d="M20 4q10 10 8 20a8 8 0 0 1-16 0q0-6 4-9 0 5 3 6-3-8 1-17z" fill="#ff7a2a"/><path d="M20 18q5 5 3 10a3.5 3.5 0 0 1-7 0q0-4 4-10z" fill="${GD}"/>`};
+const pico=(k,s=34)=>`<svg viewBox="0 0 40 40" width="${s}" height="${s}" style="vertical-align:middle">${PI[k]||''}</svg>`;
+const SARNT=`<svg viewBox="0 0 64 64" width="64" height="64"><ellipse cx="32" cy="60" rx="16" ry="3" fill="#0006"/><path d="M14 62q0-16 18-16t18 16z" fill="#2a2a2e"/><path d="M28 46h8l-4 8z" fill="#e8e2d0"/><circle cx="32" cy="32" r="14" fill="${SK}"/><ellipse cx="32" cy="40" rx="9" ry="3.2" fill="#3a2a1a"/><circle cx="26" cy="30" r="1.8" fill="#222"/><circle cx="38" cy="30" r="1.8" fill="#222"/><path d="M22 25l7 2M42 25l-7 2" stroke="#3a2a1a" stroke-width="2.4"/><rect x="16" y="12" width="32" height="9" rx="4" fill="#1a1a24"/><ellipse cx="32" cy="21" rx="19" ry="3.5" fill="#111"/><rect x="16" y="18" width="32" height="2" fill="${GD}"/><circle cx="32" cy="15" r="2.6" fill="${GD}"/><path d="M48 44l10 16" stroke="#5a3a1e" stroke-width="3"/></svg>`;
 const GENS=[
- ['🧑‍🦲','Keen Recruit',15,.2,'Does press-ups when nobody is even watching.'],
- ['📣','Lance Jack',110,1.5,'Shouts "DOWN! UP!" at the recruits.'],
- ['🩳','PTI',1200,9,'Wears shorts in January. Every January.'],
- ['💪','Gym Bro',13000,50,'Has opinions about your form. Loudly.'],
- ['⛺','Boot Camp',140000,260,'Dawn. Rain. Burpees. Forever.'],
- ['📱','Fitness App',1.6e6,1400,'Sends guilt notifications at 3am.'],
- ['🏋️','Regimental Gym',2e7,7800,'Smells of feet and ambition.'],
- ['🥤','Protein Factory',3.3e8,44000,'Chocolate flavour. Allegedly.'],
- ['⚡','Treadmill Power Station',5.1e9,260000,'Powers a city. The city is tired.'],
- ['🚀','Orbital PT',7.5e10,1.6e6,'Zero-G press-ups count double. Allegedly.'],
- ['🌌','Galactic Beasting',1.1e12,1e7,'The PTI has achieved godhood.']];
+ ['recruit','Keen Recruit',15,.2,'Does press-ups when nobody is even watching.'],
+ ['lancejack','Lance Jack',110,1.5,'Shouts "DOWN! UP!" at the recruits.'],
+ ['pti','PTI',1200,9,'Wears shorts in January. Every January.'],
+ ['gymbro','Gym Bro',13000,50,'Has opinions about your form. Loudly.'],
+ ['bootcamp','Boot Camp',140000,260,'Dawn. Rain. Burpees. Forever.'],
+ ['app','Fitness App',1.6e6,1400,'Sends guilt notifications at 3am.'],
+ ['gym','Regimental Gym',2e7,7800,'Smells of feet and ambition.'],
+ ['factory','Protein Factory',3.3e8,44000,'Chocolate flavour. Allegedly.'],
+ ['treadmill','Treadmill Power Station',5.1e9,260000,'Powers a city. The city is tired.'],
+ ['orbital','Orbital PT',7.5e10,1.6e6,'Zero-G press-ups count double. Allegedly.'],
+ ['galactic','Galactic Beasting',1.1e12,1e7,'The PTI has achieved godhood.']];
 const UPG=[
- {id:'gl',ic:'🧤',n:'Tactical Gloves',d:'+1 rep per tap',c:100,f:s=>s.tapAdd+=1},
- {id:'ps',ic:'🥤',n:'Protein Shake',d:'Taps ×2',c:600,f:s=>s.tapMul*=2},
- {id:'bf',ic:'🍳',n:'Full English Breakfast',d:'All lads ×1.5. Morale +300%.',c:5000,f:s=>s.all*=1.5},
- {id:'rf',ic:'🚀',n:'Pre-workout "Rocket Fuel"',d:'Taps also give 3% of your per-second rate',c:25000,f:s=>s.tapRps+=.03},
- {id:'mr',ic:'🪞',n:'Gym Mirror',d:'All lads ×2. They work harder when they can see themselves.',c:250000,f:s=>s.all*=2},
- {id:'bt',ic:'🎶',n:'Workout Playlist',d:'Taps ×3. It\'s all 2000s bangers.',c:1.5e6,f:s=>s.tapMul*=3},
- {id:'cn',ic:'☕',n:'NAAFI Brew Urn',d:'All lads ×2. Tea is a performance enhancer.',c:4e7,f:s=>s.all*=2},
- {id:'sm',ic:'🎖️',n:'Sarnt Major\'s Whistle',d:'The Sarnt Major turns up twice as often',c:2e8,f:s=>s.evt*=.5},
- {id:'cr',ic:'🦵',n:'Never Skip Leg Day',d:'All lads ×3',c:8e9,f:s=>s.all*=3},
- {id:'ul',ic:'🧬',n:'Ultra Gains',d:'Taps ×5, lads ×2',c:5e11,f:s=>{s.tapMul*=5;s.all*=2}}];
+ {id:'gl',ic:'gloves',n:'Tactical Gloves',d:'+1 rep per tap',c:100,f:s=>s.tapAdd+=1},
+ {id:'ps',ic:'shake',n:'Protein Shake',d:'Taps ×2',c:600,f:s=>s.tapMul*=2},
+ {id:'bf',ic:'breakfast',n:'Full English Breakfast',d:'All lads ×1.5. Morale +300%.',c:5000,f:s=>s.all*=1.5},
+ {id:'rf',ic:'fuel',n:'Pre-workout "Rocket Fuel"',d:'Taps also give 3% of your per-second rate',c:25000,f:s=>s.tapRps+=.03},
+ {id:'mr',ic:'mirror',n:'Gym Mirror',d:'All lads ×2. They work harder when they can see themselves.',c:250000,f:s=>s.all*=2},
+ {id:'bt',ic:'music',n:'Workout Playlist',d:'Taps ×3. It\'s all 2000s bangers.',c:1.5e6,f:s=>s.tapMul*=3},
+ {id:'cn',ic:'urn',n:'NAAFI Brew Urn',d:'All lads ×2. Tea is a performance enhancer.',c:4e7,f:s=>s.all*=2},
+ {id:'sm',ic:'whistle',n:'Sarnt Major\'s Whistle',d:'The Sarnt Major turns up twice as often',c:2e8,f:s=>s.evt*=.5},
+ {id:'cr',ic:'leg',n:'Never Skip Leg Day',d:'All lads ×3',c:8e9,f:s=>s.all*=3},
+ {id:'ul',ic:'dna',n:'Ultra Gains',d:'Taps ×5, lads ×2',c:5e11,f:s=>{s.tapMul*=5;s.all*=2}}];
 const QUIPS=['Recruit Jenkins has done one press-up and wants a medal.','A PTI has been spotted in shorts. It is snowing.','Someone said "cardio" and a Gym Bro fainted.','The Lance Jack has lost his voice. He is now pointing.','Morale is high. Nobody knows why.','Breaking: Protein Factory recalls "Chicken Tikka" flavour.'];
 const ACH=[[1,'First rep! Only 9,999,999 to go.'],[100,'100 reps. Your arms have filed a complaint.'],[1e4,'10K reps. The floor is now concave.'],[1e6,'A MILLION reps. You can see your abs. Briefly.'],[1e9,'A BILLION reps. Scientists are concerned.'],[1e12,'A TRILLION. The Earth has moved slightly.']];
 const fmt=n=>{if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n).toLocaleString();const u=['K','M','B','T','Qa','Qi','Sx','Sp','Oc'];let i=-1;while(n>=1000&&i<u.length-1){n/=1000;i++}return n.toFixed(n<10?2:n<100?1:0)+u[i]};
@@ -103,7 +133,7 @@ const tapVal=()=>(M.tapAdd*M.tapMul+rps()*M.tapRps)*(buffT>0?7:1);
 const costOf=(i,n)=>{const b=GENS[i][2],o=S.owned[i];return b*Math.pow(1.15,o)*(Math.pow(1.15,n)-1)/.15};
 function maxBuy(i){const b=GENS[i][2],o=S.owned[i];return Math.max(0,Math.floor(Math.log(S.reps*.15/(b*Math.pow(1.15,o))+1)/Math.log(1.15)))}
 let qty=1,tab='gen',buffT=0,evtT=60+Math.random()*60;
-function gain(n){S.reps+=n;S.life+=n;S.all+=n;while(S.ach<ACH.length&&S.all>=ACH[S.ach][0]){toast('🏅 '+ACH[S.ach][1]);S.ach++}}
+function gain(n){S.reps+=n;S.life+=n;S.all+=n;while(S.ach<ACH.length&&S.all>=ACH[S.ach][0]){toast(ACH[S.ach][1],'medal');S.ach++}}
 
 // ---------- squaddie ----------
 const cv=$('stage'),g=cv.getContext('2d');let pump=0,squash=0,parts=[];
@@ -151,39 +181,39 @@ function render(){
  const L=$('list');
  if(tab==='gen'){
   L.innerHTML=GENS.map(([ic,n,c,r,d],i)=>{const lock=i>0&&!S.owned[i-1]&&!S.owned[i],q=qty==='max'?Math.max(1,maxBuy(i)):qty,ct=costOf(i,q),each=genRate(i,M)/(S.owned[i]||1)||GENS[i][3]*M.all;
-   return `<div class="it ${lock?'locked':S.reps<ct?'no':''}" data-i="${i}"><div class="ic">${lock?'❔':ic}</div><div class="tx"><b>${lock?'???':n}</b><small>${lock?'Buy the one above to unlock':d}</small><em>${lock?'':`+${fmt(each)}/s each${S.owned[i]?` · making ${fmt(genRate(i,M))}/s`:''}`}</em></div><div class="ct"><span>${S.owned[i]}</span>${q>1?'×'+q+' ':''}${fmt(ct)}</div></div>`}).join('');
+   return `<div class="it ${lock?'locked':S.reps<ct?'no':''}" data-i="${i}"><div class="ic">${pico(lock?'lock':ic)}</div><div class="tx"><b>${lock?'???':n}</b><small>${lock?'Buy the one above to unlock':d}</small><em>${lock?'':`+${fmt(each)}/s each${S.owned[i]?` · making ${fmt(genRate(i,M))}/s`:''}`}</em></div><div class="ct"><span>${S.owned[i]}</span>${q>1?'×'+q+' ':''}${fmt(ct)}</div></div>`}).join('');
   L.querySelectorAll('.it').forEach(el=>el.onclick=()=>{const i=+el.dataset.i;if(el.classList.contains('locked'))return;const q=qty==='max'?maxBuy(i):qty;if(!q)return;const c=costOf(i,q);if(S.reps<c)return;S.reps-=c;S.owned[i]+=q;M=mods();tone(660,.08);
-   for(const t of[25,50,100,200])if(S.owned[i]>=t&&S.owned[i]-q<t)toast(`⭐ ${t} ${GENS[i][1]}s! Their output doubles.`);render()});
+   for(const t of[25,50,100,200])if(S.owned[i]>=t&&S.owned[i]-q<t)toast(`${t} ${GENS[i][1]}s! Their output doubles.`,GENS[i][0]);render()});
  }else if(tab==='up'){
   const av=UPG.filter(u=>!S.ups.includes(u.id));
-  L.innerHTML=av.length?av.map(u=>`<div class="it ${S.reps<u.c?'no':''}" data-id="${u.id}"><div class="ic">${u.ic}</div><div class="tx"><b>${u.n}</b><small>${u.d}</small></div><div class="ct">${fmt(u.c)}</div></div>`).join(''):'<div class="it"><div class="tx"><b>All upgrades bought.</b><small>You absolute unit.</small></div></div>';
-  L.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>{const u=UPG.find(x=>x.id===el.dataset.id);if(S.reps<u.c)return;S.reps-=u.c;S.ups.push(u.id);M=mods();tone(880,.12);toast(`${u.ic} ${u.n} bought!`);render()});
+  L.innerHTML=av.length?av.map(u=>`<div class="it ${S.reps<u.c?'no':''}" data-id="${u.id}"><div class="ic">${pico(u.ic)}</div><div class="tx"><b>${u.n}</b><small>${u.d}</small></div><div class="ct">${fmt(u.c)}</div></div>`).join(''):'<div class="it"><div class="tx"><b>All upgrades bought.</b><small>You absolute unit.</small></div></div>';
+  L.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>{const u=UPG.find(x=>x.id===el.dataset.id);if(S.reps<u.c)return;S.reps-=u.c;S.ups.push(u.id);M=mods();tone(880,.12);toast(`${u.n} bought!`,u.ic);render()});
  }else{
   const gainM=Math.floor(Math.sqrt(S.life/1e6));
-  L.innerHTML=`<div class="pp"><div style="font-size:40px">🎖️</div><b style="font-size:18px">Pass Out Parade</b><p style="font-size:13px;opacity:.85;margin-top:6px">Graduate your whole empire. You lose your reps, lads and upgrades but earn <b>Medals</b>. Every medal is +10% to everything, forever.</p>
+  L.innerHTML=`<div class="pp"><div>${pico('medal',56)}</div><b style="font-size:18px">Pass Out Parade</b><p style="font-size:13px;opacity:.85;margin-top:6px">Graduate your whole empire. You lose your reps, lads and upgrades but earn <b>Medals</b>. Every medal is +10% to everything, forever.</p>
    <p style="margin-top:8px">Medals: <b>${S.medals}</b> → <b style="color:#ffd23f">+${gainM}</b> if you pass out now</p><p style="font-size:12px;opacity:.7">(needs 1M reps this career · you have ${fmt(S.life)})</p><button id="passB" ${gainM<1?'disabled':''}>PASS OUT</button></div>
    <div class="pp" style="background:#ffffff08;border-color:#ffffff18;text-align:left;font-size:13px;line-height:1.6"><b>Service record</b><br>Lifetime reps: ${fmt(S.all)}<br>Taps: ${S.taps.toLocaleString()}<br>Lads enlisted: ${S.owned.reduce((a,b)=>a+b,0)}<br>Medals: ${S.medals} (+${S.medals*10}% everything)</div>`;
-  const b=$('passB');if(b)b.onclick=()=>{if(!confirm(`Pass out for ${gainM} medal${gainM>1?'s':''}? Your reps, lads and upgrades reset.`))return;const m=S.medals+gainM,all=S.all,ach=S.ach,taps=S.taps;S=fresh();S.medals=m;S.all=all;S.ach=ach;S.taps=taps;M=mods();store();toast(`🎖️ Passed out! ${m} medals. The band played. Badly.`);[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.25),i*140));render()};
+  const b=$('passB');if(b)b.onclick=()=>{if(!confirm(`Pass out for ${gainM} medal${gainM>1?'s':''}? Your reps, lads and upgrades reset.`))return;const m=S.medals+gainM,all=S.all,ach=S.ach,taps=S.taps;S=fresh();S.medals=m;S.all=all;S.ach=ach;S.taps=taps;M=mods();store();toast(`Passed out! ${m} medals. The band played. Badly.`,'medal');[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.25),i*140));render()};
  }
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));render()});
 document.querySelectorAll('#qty button').forEach(b=>b.onclick=()=>{qty=b.dataset.q==='max'?'max':+b.dataset.q;document.querySelectorAll('#qty button').forEach(x=>x.classList.toggle('on',x===b));render()});
-function toast(s){const t=document.createElement('div');t.className='toast';t.textContent=s;$('toasts').appendChild(t);setTimeout(()=>t.remove(),4200);while($('toasts').children.length>4)$('toasts').firstChild.remove()}
+function toast(s,ik){const t=document.createElement('div');t.className='toast';s=s.replace(/\p{Extended_Pictographic}\uFE0F?|\u200D|\uFE0F/gu,'').trim();t.innerHTML=(ik?pico(ik,22)+' ':'')+s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));$('toasts').appendChild(t);setTimeout(()=>t.remove(),4200);while($('toasts').children.length>4)$('toasts').firstChild.remove()}
 
 // ---------- the Sarnt Major ----------
-const ev=$('event');
+const ev=$('event');ev.innerHTML=SARNT;
 function spawnEvent(){const r=$('left').getBoundingClientRect();ev.style.left=(20+Math.random()*(r.width-90))+'px';ev.style.top=(60+Math.random()*(r.height-160))+'px';ev.style.display='block';ev.dataset.t=Date.now();setTimeout(()=>{if(Date.now()-ev.dataset.t>=8900)ev.style.display='none'},9000)}
-ev.onclick=()=>{ev.style.display='none';if(Math.random()<.55){buffT=20;toast('🎖️ SARNT MAJOR: "BEASTING! Everyone ×7 for 20 seconds!"')}else{const v=Math.max(50,rps()*600+tapVal()*30);gain(v);toast(`🎖️ SARNT MAJOR: "Not bad." (+${fmt(v)} reps of pure fear)`)}[880,1100].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*90))};
+ev.onclick=()=>{ev.style.display='none';if(Math.random()<.55){buffT=20;toast('SARNT MAJOR: "BEASTING! Everyone ×7 for 20 seconds!"','fire')}else{const v=Math.max(50,rps()*600+tapVal()*30);gain(v);toast(`SARNT MAJOR: "Not bad." (+${fmt(v)} reps of pure fear)`,'whistle')}[880,1100].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*90))};
 
 // ---------- loop ----------
-let last=performance.now(),acc=0,uiT=0,qT=40;
+let lastMedals=-1,last=performance.now(),acc=0,uiT=0,qT=40;
 function loop(t){const dt=Math.min(1,(t-last)/1000);last=t;
- gain(rps()*dt);if(buffT>0){buffT-=dt;$('buff').style.display='block';$('buff').textContent=`🔥 BEASTING ×7 · ${Math.ceil(buffT)}s`}else $('buff').style.display='none';
+ gain(rps()*dt);if(buffT>0){buffT-=dt;$('buff').style.display='block';$('buff').textContent=`BEASTING ×7 · ${Math.ceil(buffT)}s`}else $('buff').style.display='none';
  evtT-=dt;if(evtT<=0){evtT=(70+Math.random()*80)*M.evt;spawnEvent()}
- qT-=dt;if(qT<=0){qT=45+Math.random()*40;toast('📰 '+QUIPS[Math.floor(Math.random()*QUIPS.length)])}
+ qT-=dt;if(qT<=0){qT=45+Math.random()*40;toast(QUIPS[Math.floor(Math.random()*QUIPS.length)],'news')}
  pump=Math.max(0,pump-dt*4);for(const q of parts){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=400*dt;q.t-=dt*1.5}parts=parts.filter(q=>q.t>0);
  drawScene(t);
- $('reps').textContent=fmt(S.reps)+' reps';$('rps').textContent=fmt(rps())+' per second';$('medals').textContent=S.medals?`🎖️ ${S.medals} medals · +${S.medals*10}%`:'';
+ $('reps').textContent=fmt(S.reps)+' reps';$('rps').textContent=fmt(rps())+' per second';if(S.medals!==lastMedals){lastMedals=S.medals;$('medals').innerHTML=S.medals?`${pico('medal',18)} ${S.medals} medals · +${S.medals*10}%`:''}
  uiT-=dt;if(uiT<=0){uiT=.4;updAfford()}
  acc+=dt;if(acc>5){acc=0;store()}
  requestAnimationFrame(loop)}
@@ -193,7 +223,7 @@ let AC=null;function initAudio(){try{if(!AC)AC=new(window.AudioContext||window.w
 function tone(f,d=.1,v=.08){if(!AC)return;try{const t=AC.currentTime,o=AC.createOscillator(),gn=AC.createGain();o.type='triangle';o.frequency.setValueAtTime(f,t);gn.gain.setValueAtTime(v,t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn).connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
 addEventListener('beforeunload',store);document.addEventListener('visibilitychange',()=>{if(document.hidden)store()});
 const away=Math.min(8*3600,(Date.now()-(S.last||Date.now()))/1000);
-if(away>60){const v=rps()*away*.5;if(v>0){gain(v);setTimeout(()=>toast(`💤 While you were away (${Math.floor(away/60)} min) the lads did ${fmt(v)} press-ups.`),400)}}
+if(away>60){const v=rps()*away*.5;if(v>0){gain(v);setTimeout(()=>toast(`While you were away (${Math.floor(away/60)} min) the lads did ${fmt(v)} press-ups.`,'zzz'),400)}}
 fitC();render();requestAnimationFrame(loop);
 </script>
 </body>
